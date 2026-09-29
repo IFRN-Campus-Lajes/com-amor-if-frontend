@@ -46,3 +46,21 @@ export const postPrivateData = async (call, data, token) => {
     throw error;
   }
 };
+
+export const putPrivateData = async (call, data, token) => {
+  const header = {
+    "Content-Type": "application/json",
+    Authorization: "Bearer " + token,
+  };
+  const response = await api.put(`${API_URL}${call}`, data, { headers: header });
+  return response.data;
+};
+
+export const deletePrivateData = async (call, token) => {
+  const header = {
+    "Content-Type": "application/json",
+    Authorization: "Bearer " + token,
+  };
+  const response = await api.delete(`${API_URL}${call}`, { headers: header });
+  return response.data;
+};

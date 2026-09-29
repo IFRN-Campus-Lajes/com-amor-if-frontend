@@ -5,7 +5,7 @@ import { FaUserCircle } from "react-icons/fa"; // Importando o ícone
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "../../providers/AuthProvider";
-import { isFromCategory } from "../../utils/role";
+import { canManageOlympiads, isFromCategory } from "../../utils/role";
 
 const Dropdown = ({ username }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -84,6 +84,16 @@ const Dropdown = ({ username }) => {
                 </a>
               </li>
             </>
+          )}
+          {canManageOlympiads(user) && (
+            <li>
+              <a
+                href="/olympiads"
+                className="block py-1 px-4 hover:bg-gray-200 transition duration-200 ease-in-out"
+              >
+                Olimpíadas
+              </a>
+            </li>
           )}
           <li>
             <a

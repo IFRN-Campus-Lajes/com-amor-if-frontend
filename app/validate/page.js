@@ -12,6 +12,7 @@ import { useAuth } from "../../providers/AuthProvider";
 import { format } from "date-fns";
 import NoOpenSchoolYearNotice from "../components/NoOpenSchoolYearNotice";
 import { useOpenSchoolYear } from "../hooks/useOpenSchoolYear";
+import { formatPointMotivation } from "../../utils/point";
 
 const tabs = [
   {
@@ -292,7 +293,7 @@ const PointsValidationPage = () => {
             contador: pontuacao.contador,
             id_turma: pontuacao.turma.id,
             regra: pontuacao.regra.descricao,
-            motivacao: pontuacao.descricao,
+            motivacao: formatPointMotivation(pontuacao),
             operacao: pontuacao.operacao === "SUM" ? "Adição" : "Subtração",
             pontos: pontuacao.pontos,
             status: pontuacao.aplicado
