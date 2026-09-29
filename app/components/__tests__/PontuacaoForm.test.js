@@ -24,6 +24,22 @@ const variableRule = {
   tipoRegra: { fixo: false, porTurno: true, frequencia: 1 },
 };
 
+const olympiadRule = {
+  id: 3,
+  descricao: "2 pontos por aluno em cada olimpíada",
+  categoria: "Atividades extracurriculares",
+  operacao: "SUM",
+  valorMinimo: 2,
+  valorMaximo: 2,
+  tipoRegra: {
+    fixo: true,
+    porTurno: false,
+    frequencia: 0,
+    temAluno: true,
+    temOlimpiada: true,
+  },
+};
+
 describe("PontuacaoForm com seletor de regras pesquisável", () => {
   it("mantém os efeitos de uma regra fixa ao selecioná-la pela busca", async () => {
     const user = userEvent.setup();
@@ -126,5 +142,35 @@ describe("PontuacaoForm com seletor de regras pesquisável", () => {
     expect(
       screen.getByRole("button", { name: "Registrar Pontuação" })
     ).toBeDisabled();
+  });
+
+  it("exige e envia a olimpíada para regras que identificam a participação", async () => {
+    const onSubmit = jest.fn();
+    const user = userEvent.setup();
+    render(
+      <PontuacaoForm
+        regrasDisponiveis={[olympiadRule]}
+        turmasDisponiveis={classes}
+        olimpiadasDisponiveis={[{ id: 9, nome: "OBMEP" }]}
+        onSubmit={onSubmit}
+      />
+    );
+
+    await user.click(screen.getByRole("combobox", { name: /buscar regra/i }));
+    await user.click(screen.getByRole("option", { name: olympiadRule.descricao }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Turma" }), "turma-1");
+    await user.type(screen.getByRole("textbox", { name: "Matrícula do Aluno" }), "20151204010002");
+
+    const olympiadSelect = screen.getByRole("combobox", { name: "Olimpíada" });
+    expect(olympiadSelect).toBeRequired();
+    await user.selectOptions(olympiadSelect, "9");
+    await user.click(screen.getByRole("button", { name: "Registrar Pontuação" }));
+
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ idRegra: "3", idOlimpiada: "9" }),
+      expect.any(Function),
+      expect.any(Function),
+      expect.any(Function)
+    );
   });
 });

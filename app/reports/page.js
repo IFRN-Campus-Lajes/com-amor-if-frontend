@@ -12,6 +12,7 @@ import {
   RadarSensoChart,
 } from "../components/ReportsCharts";
 import NoData from "../components/NoData";
+import { formatPointMotivation } from "../../utils/point";
 
 const apiUrl = process.env.NEXT_PUBLIC_REACT_APP_API_URL;
 
@@ -194,6 +195,7 @@ const ReportsPage = () => {
           "Bimestre",
           "Senso",
           "Regra",
+          "Motivacao",
           "Operacao",
           "Pontos",
           "Status",
@@ -207,6 +209,7 @@ const ReportsPage = () => {
             turma: p.nomeTurma,
             bimestre: p.bimestre === 4 ? "Extra" : p.bimestre + 1,
             regra: p.regra.descricao,
+            motivacao: formatPointMotivation(p),
             senso: p.regra.senso.descricao,
             operacao: p.operacao === "SUM" ? "Adição" : "Subtração",
             pontos: p.pontos,

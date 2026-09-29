@@ -7,7 +7,7 @@ const Modal = ({ title, children, isOpen, onClose, onSave }) => {
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-gray-900 bg-opacity-50">
-      <div className="bg-white rounded-lg shadow-lg w-96">
+      <div className="max-h-[calc(100vh-2rem)] w-[calc(100%-2rem)] max-w-md overflow-y-auto rounded-lg bg-white shadow-lg">
         <div className="px-4 py-2 border-b">
           <h2 className="text-lg font-semibold text-gray-700">{title}</h2>
         </div>

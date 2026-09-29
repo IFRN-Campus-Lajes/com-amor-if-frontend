@@ -8,7 +8,13 @@ const fieldLabelClassName = "block text-sm font-semibold text-gray-700";
 const fieldControlClassName =
   "mt-2 min-h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500";
 
-const PontuacaoForm = ({ regrasDisponiveis, turmasDisponiveis = [], onSubmit, disabled = false }) => {
+const PontuacaoForm = ({
+  regrasDisponiveis,
+  turmasDisponiveis = [],
+  olimpiadasDisponiveis = [],
+  onSubmit,
+  disabled = false,
+}) => {
   const [regras, setRegras] = useState(regrasDisponiveis || []);
   const [operacao, setOperacao] = useState(null);
   const [formData, setFormData] = useState({
@@ -20,6 +26,7 @@ const PontuacaoForm = ({ regrasDisponiveis, turmasDisponiveis = [], onSubmit, di
     matriculaAluno: "",
     bimestre: 0,
     turno: "",
+    idOlimpiada: "",
   });
   const [tipoRegra, setTipoRegra] = useState(null);
 
@@ -39,6 +46,7 @@ const PontuacaoForm = ({ regrasDisponiveis, turmasDisponiveis = [], onSubmit, di
       bimestre: regraSelecionada?.tipoRegra?.bimestreExtra ? 4 : 0,
       valorMinimo: regraSelecionada?.valorMinimo || 0,
       valorMaximo: regraSelecionada?.valorMaximo || 500,
+      idOlimpiada: "",
     });
   };
 
@@ -186,6 +194,29 @@ const PontuacaoForm = ({ regrasDisponiveis, turmasDisponiveis = [], onSubmit, di
               maxLength={15}
               className={fieldControlClassName}
             />
+          </div>
+        )}
+
+        {tipoRegra?.temOlimpiada && (
+          <div>
+            <label htmlFor="olimpiada" className={fieldLabelClassName}>
+              Olimpíada
+            </label>
+            <select
+              id="olimpiada"
+              name="idOlimpiada"
+              value={formData.idOlimpiada}
+              onChange={handleInputChange}
+              className={fieldControlClassName}
+              required
+            >
+              <option value="">Selecione uma olimpíada</option>
+              {olimpiadasDisponiveis.map((olimpiada) => (
+                <option key={olimpiada.id} value={olimpiada.id}>
+                  {olimpiada.nome}
+                </option>
+              ))}
+            </select>
           </div>
         )}
       </div>
