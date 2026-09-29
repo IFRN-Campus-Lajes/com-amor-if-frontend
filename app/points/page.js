@@ -16,6 +16,7 @@ import NoOpenSchoolYearNotice from "../components/NoOpenSchoolYearNotice";
 import NoSchoolClassesNotice from "../components/NoSchoolClassesNotice";
 import { useOpenSchoolYear } from "../hooks/useOpenSchoolYear";
 import { orderSenseNames } from "../../utils/senses";
+import { formatPointMotivation } from "../../utils/point";
 
 // Cores para cada senso
 const SENSE_COLORS = {
@@ -288,7 +289,6 @@ const PointsPage = () => {
             headers={[
               "Nome da Turma",
               "Regra",
-              "Olimpíada",
               "Motivacao",
               "Operacao",
               "Pontos",
@@ -305,8 +305,7 @@ const PointsPage = () => {
                     .map((pontuacao) => ({
                       nome_da_turma: pontuacao.turma.nome,
                       regra: pontuacao.regra.descricao,
-                      olimpíada: pontuacao.olimpiada?.nome || "—",
-                      motivacao: pontuacao.descricao,
+                      motivacao: formatPointMotivation(pontuacao),
                       operacao:
                         pontuacao.operacao === "SUM" ? "Adição" : "Subtração",
                       pontos: pontuacao.pontos,

@@ -11,6 +11,7 @@ import {
   PontuacaoLineChart,
   PontuacaoRadarChart,
 } from "../../components/ReportCharts";
+import { formatPointMotivation } from "../../../utils/point";
 
 const apiUrl = process.env.NEXT_PUBLIC_REACT_APP_API_URL;
 
@@ -146,7 +147,7 @@ const ReportPage = () => {
           "Bimestre",
           "Senso",
           "Regra",
-          "Olimpíada",
+          "Motivacao",
           "Operacao",
           "Pontos",
           "Status",
@@ -162,7 +163,7 @@ const ReportPage = () => {
             id_turma: pontuacao.turma.id,
             senso: pontuacao.regra.senso.descricao,
             regra: pontuacao.regra.descricao,
-            olimpíada: pontuacao.olimpiada?.nome || "—",
+            motivacao: formatPointMotivation(pontuacao),
             operacao: pontuacao.operacao === "SUM" ? "Adição" : "Subtração",
             pontos: pontuacao.pontos,
             status: pontuacao.aplicado
