@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 
 import { useAuth } from "../../providers/AuthProvider";
 import { getIFRNUrl } from "../../utils/getIFRNUrl";
-import { isFromCategory } from "../../utils/role";
+import { canManageOlympiads, isFromCategory } from "../../utils/role";
 
 const MobileNavbar = ({ isLoggedIn, isMenuOpen, toggleMenu }) => {
   const menuRef = useRef(null);
@@ -147,6 +147,17 @@ const MobileNavbar = ({ isLoggedIn, isMenuOpen, toggleMenu }) => {
                     </a>
                   </li>
                 ) : null}
+                {canManageOlympiads(user) && (
+                  <li>
+                    <a
+                      onClick={handleLinkClick}
+                      href="/olympiads"
+                      className="block py-2 text-black hover:bg-gray-100 px-4 rounded-lg transition duration-200 ease-in-out"
+                    >
+                      Olimpíadas
+                    </a>
+                  </li>
+                )}
                 <li>
                   <a
                     href="#"

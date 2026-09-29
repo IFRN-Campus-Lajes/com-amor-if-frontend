@@ -146,6 +146,7 @@ const ReportPage = () => {
           "Bimestre",
           "Senso",
           "Regra",
+          "Olimpíada",
           "Operacao",
           "Pontos",
           "Status",
@@ -161,6 +162,7 @@ const ReportPage = () => {
             id_turma: pontuacao.turma.id,
             senso: pontuacao.regra.senso.descricao,
             regra: pontuacao.regra.descricao,
+            olimpíada: pontuacao.olimpiada?.nome || "—",
             operacao: pontuacao.operacao === "SUM" ? "Adição" : "Subtração",
             pontos: pontuacao.pontos,
             status: pontuacao.aplicado

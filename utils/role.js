@@ -33,3 +33,10 @@ export const hasRole = (user, role) => {
   // Verifica se a role com o prefixo está presente nas roles do usuário
   return user.roles.includes(roleWithPrefix);
 };
+
+export const canManageOlympiads = (user) =>
+  Boolean(
+    user?.roles?.some((role) =>
+      ["ROLE_ADMINISTRADOR", "ROLE_COORDENADOR_CURSO"].includes(role)
+    )
+  );

@@ -37,6 +37,7 @@ const PointsPage = () => {
   const [filteredPontuacoes, setFilteredPontuacoes] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
+  const [olimpiadas, setOlimpiadas] = useState([]);
   const token = getToken();
   const {
     hasOpenSchoolYear,
@@ -90,6 +91,16 @@ const PointsPage = () => {
     }
   };
 
+  const fetchOlimpiadas = async () => {
+    try {
+      setOlimpiadas(await fetchPrivateData("olimpiadas", token));
+    } catch (error) {
+      setMessages({
+        error: "Erro ao carregar olimpíadas: " + error?.response?.data?.errors?.[0],
+      });
+    }
+  };
+
   const handleSubmit = async (
     formData,
     setFormData,
@@ -107,6 +118,7 @@ const PointsPage = () => {
       matricula_aluno: formData.matriculaAluno,
       bimestre: formData.bimestre,
       turno: formData.turno,
+      id_olimpiada: formData.idOlimpiada || null,
     };
 
     try {
@@ -120,10 +132,12 @@ const PointsPage = () => {
         matriculaAluno: "",
         bimestre: 0,
         turno: "",
+        idOlimpiada: "",
       });
       setTipoRegra(null);
       setOperacao(null);
       fetchPontuacoes();
+      fetchOlimpiadas();
     } catch (error) {
       setMessages({
         error: "Erro ao enviar pontuação: " + error?.response?.data?.errors[0],
@@ -185,6 +199,7 @@ const PointsPage = () => {
     if (user && !isLoading && !isSchoolYearLoading) {
       fetchRules();
       fetchPontuacoes();
+      fetchOlimpiadas();
     }
   }, [user, isLoading, isSchoolYearLoading, hasOpenSchoolYear, token]);
 
@@ -258,6 +273,7 @@ const PointsPage = () => {
             key={activeTab}
             regrasDisponiveis={groupedRules[activeTab]}
             turmasDisponiveis={schoolClasses}
+            olimpiadasDisponiveis={olimpiadas}
             disabled={!hasSchoolClasses}
           />
           <h2
@@ -272,6 +288,7 @@ const PointsPage = () => {
             headers={[
               "Nome da Turma",
               "Regra",
+              "Olimpíada",
               "Motivacao",
               "Operacao",
               "Pontos",
@@ -288,6 +305,7 @@ const PointsPage = () => {
                     .map((pontuacao) => ({
                       nome_da_turma: pontuacao.turma.nome,
                       regra: pontuacao.regra.descricao,
+                      olimpíada: pontuacao.olimpiada?.nome || "—",
                       motivacao: pontuacao.descricao,
                       operacao:
                         pontuacao.operacao === "SUM" ? "Adição" : "Subtração",
