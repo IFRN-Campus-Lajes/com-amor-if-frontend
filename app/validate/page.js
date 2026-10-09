@@ -12,7 +12,13 @@ import { useAuth } from "../../providers/AuthProvider";
 import { format } from "date-fns";
 import NoOpenSchoolYearNotice from "../components/NoOpenSchoolYearNotice";
 import { useOpenSchoolYear } from "../hooks/useOpenSchoolYear";
-import { formatPointMotivation } from "../../utils/point";
+import {
+  formatPointMotivation,
+  formatPointSchoolClasses,
+  formatPointScope,
+  getPointSchoolClassNames,
+  groupCollectivePoints,
+} from "../../utils/point";
 
 const tabs = [
   {
@@ -77,6 +83,8 @@ const PointsValidationPage = () => {
     }
   }, [activeTab, token, user, hasOpenSchoolYear]);
 
+  const groupedPoints = groupCollectivePoints(pointsData);
+
   if (isLoading || isLoggingOut || isSchoolYearLoading)
     return <LoadingSpinner />;
   if (!user) return <NotAuthorized />;
@@ -126,7 +134,11 @@ const PointsValidationPage = () => {
 
     try {
       await postPrivateData("pontuacao/deletarPontuacao", dataToSend, token);
-      setMessages({ success: "Pontuação deletada com sucesso" });
+      setMessages({
+        success: deletingPoint.collective
+          ? "Lançamento coletivo deletado de todas as turmas"
+          : "Pontuação deletada com sucesso",
+      });
 
       fetchPoints(tabs.find((tab) => tab.label === activeTab).endpoint);
       setDeleteModalOpen(false);
@@ -142,9 +154,9 @@ const PointsValidationPage = () => {
     if (!token)
       return setMessages({ error: "Token de autenticação não encontrado" });
 
-    const dataToSend = pointsData.map((point) => ({
+    const dataToSend = groupedPoints.map((point) => ({
       contador: point.contador,
-      id_turma: point.idTurma,
+      id_turma: point.turma?.id || point.idTurma,
     }));
 
     try {
@@ -174,7 +186,11 @@ const PointsValidationPage = () => {
 
     try {
       await postPrivateData("manager/aprovar", dataToSend, token);
-      setMessages({ success: "Pontuação aplicada com sucesso" });
+      setMessages({
+        success: point.collective
+          ? "Lançamento coletivo aplicado a todas as turmas"
+          : "Pontuação aplicada com sucesso",
+      });
 
       //console.log(tabs.find((tab) => tab.label === activeTab).endpoint);
 
@@ -199,7 +215,11 @@ const PointsValidationPage = () => {
 
     try {
       await postPrivateData("manager/cancelar", dataToSend, token);
-      setMessages({ success: "Pontuação anulada com sucesso" });
+      setMessages({
+        success: point.collective
+          ? "Lançamento coletivo anulado em todas as turmas"
+          : "Pontuação anulada com sucesso",
+      });
 
       fetchPoints(tabs.find((tab) => tab.label === activeTab).endpoint);
       setDeleteModalOpen(false);
@@ -215,8 +235,10 @@ const PointsValidationPage = () => {
     setCurrentPage(page);
   };
 
-  const filteredPoints = pointsData.filter((p) =>
-    p.turma.nome.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredPoints = groupedPoints.filter((point) =>
+    getPointSchoolClassNames(point).some((name) =>
+      name.toLowerCase().includes(searchTerm.toLowerCase())
+    )
   );
 
   return (
@@ -275,6 +297,7 @@ const PointsValidationPage = () => {
         searchText="Buscar pelo nome da turma..."
         headers={[
           "Nome da Turma",
+          "Abrangência",
           "Bimestre",
           "Regra",
           "Motivacao",
@@ -287,7 +310,8 @@ const PointsValidationPage = () => {
         data={filteredPoints
           .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
           .map((pontuacao) => ({
-            nome_da_turma: pontuacao.turma.nome,
+            nome_da_turma: formatPointSchoolClasses(pontuacao),
+            "abrangência": formatPointScope(pontuacao),
             bimestre:
               pontuacao.bimestre === 4 ? "Extra" : pontuacao.bimestre + 1,
             contador: pontuacao.contador,
@@ -306,6 +330,8 @@ const PointsValidationPage = () => {
               "dd/MM/yyyy HH:mm:ss"
             ),
             registrado_por: pontuacao.criadoPor.username,
+            collective: pontuacao.collective,
+            schoolClasses: pontuacao.schoolClasses,
           }))}
         actions={getActions(activeTab)}
         page={currentPage}
@@ -320,6 +346,11 @@ const PointsValidationPage = () => {
           setCurrentPage(1);
           setSearchTerm(value);
         }}
+        rowClassName={(row) =>
+          row.collective
+            ? "bg-amber-50 hover:bg-amber-100 border-l-4 border-amber-400"
+            : ""
+        }
       />
 
       <Modal
@@ -328,7 +359,11 @@ const PointsValidationPage = () => {
         onClose={() => setDeleteModalOpen(false)}
         onSave={deletePoints}
       >
-        <p>Tem certeza que deseja deletar essa pontuação?</p>
+        <p>
+          {deletingPoint?.collective
+            ? `Este lançamento coletivo será deletado das ${deletingPoint.schoolClasses.length} turmas. Deseja continuar?`
+            : "Tem certeza que deseja deletar essa pontuação?"}
+        </p>
       </Modal>
     </div>
   );
