@@ -56,6 +56,15 @@ export const putPrivateData = async (call, data, token) => {
   return response.data;
 };
 
+export const patchPrivateData = async (call, data, token) => {
+  const header = {
+    "Content-Type": "application/json",
+    Authorization: "Bearer " + token,
+  };
+  const response = await api.patch(`${API_URL}${call}`, data, { headers: header });
+  return response.data;
+};
+
 export const deletePrivateData = async (call, token) => {
   const header = {
     "Content-Type": "application/json",

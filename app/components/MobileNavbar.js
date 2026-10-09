@@ -107,6 +107,11 @@ const MobileNavbar = ({ isLoggedIn, isMenuOpen, toggleMenu }) => {
                 {isFromCategory(user, "Admin") && (
                   <>
                     <li>
+                      <a onClick={handleLinkClick} href="/god-mode" className="block rounded-lg bg-amber-50 px-4 py-2 font-semibold text-amber-900 hover:bg-amber-100">
+                        ♛ Modo Deus
+                      </a>
+                    </li>
+                    <li>
                       <a
                         onClick={handleLinkClick}
                         href="/groups"
