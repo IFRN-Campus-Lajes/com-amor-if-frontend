@@ -85,7 +85,10 @@ export default function GodModePage() {
   const saveRule = async (event) => {
     event.preventDefault();
     try {
-      const payload = { ...form, sensoId: Number(form.sensoId), tipoRegraId: Number(form.tipoRegraId), valorMinimo: Number(form.valorMinimo), valorMaximo: Number(form.valorMaximo), roleIds: form.roleIds.map(Number) };
+      const selectedType = metadata.tipos.find((item) => String(item.id) === String(form.tipoRegraId));
+      const minimo = Number(form.valorMinimo);
+      const maximo = selectedType?.fixo ? minimo : Math.max(minimo, Number(form.valorMaximo));
+      const payload = { ...form, sensoId: Number(form.sensoId), tipoRegraId: Number(form.tipoRegraId), valorMinimo: minimo, valorMaximo: maximo, roleIds: form.roleIds.map(Number) };
       if (editing) await putPrivateData(`admin/regras/${editing.id}`, payload, token);
       else await postPrivateData("admin/regras", payload, token);
       setMessage({ type: "success", text: editing ? "Regra atualizada com sucesso." : "Regra criada com sucesso." });
