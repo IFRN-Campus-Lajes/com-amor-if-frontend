@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { FaBolt, FaCircleMinus, FaCirclePlus, FaCrown, FaLayerGroup, FaPen, FaPlus, FaPowerOff } from "react-icons/fa6";
+import { FaBolt, FaChevronDown, FaChevronRight, FaCircleMinus, FaCirclePlus, FaCrown, FaLayerGroup, FaPen, FaPlus, FaPowerOff } from "react-icons/fa6";
 import { useAuth } from "../../providers/AuthProvider";
 import { deletePrivateData, fetchPrivateData, patchPrivateData, postPrivateData, putPrivateData } from "../../utils/api";
 import { isFromCategory } from "../../utils/role";
@@ -39,6 +39,7 @@ export default function GodModePage() {
   const [busy, setBusy] = useState(true);
   const [message, setMessage] = useState(null);
   const [pendingAction, setPendingAction] = useState(null);
+  const [collapsedCategories, setCollapsedCategories] = useState({});
 
   const load = async () => {
     setBusy(true);
@@ -138,14 +139,14 @@ export default function GodModePage() {
           {metadata.sensos.map((item) => { const style = SENSE_TAB_STYLES[item.descricao] || { active: "border-primary bg-emerald-50 text-primary", idle: "text-gray-600 hover:bg-gray-100" }; return <button key={item.id} onClick={() => setSense(item.descricao)} className={`whitespace-nowrap rounded-t-lg border-b-2 px-4 py-3 text-sm font-semibold ${sense === item.descricao ? style.active : `border-transparent ${style.idle}`}`}>{item.descricao} <span className="ml-1 text-xs">{rules.filter((r) => r.senso === item.descricao).length}</span></button>; })}
         </div>
         {Object.keys(grouped).length === 0 && <p className="rounded-xl border border-dashed border-gray-300 bg-white p-10 text-center text-gray-500">Nenhuma regra encontrada.</p>}
-        {Object.entries(grouped).map(([category, items]) => <section key={category} className="mb-7"><div className="mb-2 flex items-center gap-2"><h2 className="font-bold text-gray-900">{category}</h2><span className="text-xs text-gray-500">{items.length} {items.length === 1 ? "regra" : "regras"}</span></div><div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        {Object.entries(grouped).map(([category, items]) => { const collapsed = collapsedCategories[category]; return <section key={category} className="mb-7"><button type="button" onClick={() => setCollapsedCategories((current) => ({ ...current, [category]: !current[category] }))} aria-expanded={!collapsed} className="mb-2 flex w-full items-center gap-2 rounded-lg px-1 py-2 text-left hover:bg-gray-100"><span className="grid h-6 w-6 place-items-center text-gray-500">{collapsed ? <FaChevronRight /> : <FaChevronDown />}</span><h2 className="font-bold text-gray-900">{category}</h2><span className="text-xs text-gray-500">{items.length} {items.length === 1 ? "regra" : "regras"}</span></button>{!collapsed && <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
           {items.map((rule) => <article key={rule.id} className={`grid items-center gap-3 border-b border-gray-100 p-4 last:border-0 sm:grid-cols-[34px_1fr_auto_auto] ${!rule.ativo ? "bg-gray-50 opacity-70" : ""}`}>
             <span className={`grid h-8 w-8 place-items-center rounded-full ${rule.operacao === "SUM" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>{rule.operacao === "SUM" ? <FaCirclePlus /> : <FaCircleMinus />}</span>
             <div><h3 className="font-semibold text-gray-900">{rule.descricao}</h3><p className="mt-1 text-xs text-gray-500">{rule.fixo ? `${rule.valorMinimo} pontos` : `${rule.valorMinimo}–${rule.valorMaximo} pontos`} · {rule.temAluno ? "por aluno" : rule.porTurno ? "por turno" : "por turma"} · {FREQUENCIES[rule.frequencia] || "Configurável"} · v{rule.versao || 1}</p></div>
             <span className={`w-fit rounded-full px-2.5 py-1 text-xs font-bold ${rule.ativo ? "bg-emerald-100 text-emerald-700" : "bg-gray-200 text-gray-600"}`}>{rule.ativo ? "Ativa" : "Inativa"}</span>
             <div className="flex gap-2"><button onClick={() => openRule(rule)} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-gray-200 px-3 text-sm font-semibold hover:bg-gray-50"><FaPen /> Editar</button><button onClick={() => setPendingAction({ title: rule.ativo ? "Desativar regra" : "Ativar regra", description: `${rule.ativo ? "Desativar" : "Ativar"} “${rule.descricao}”? O histórico de pontuações será preservado.`, confirmLabel: rule.ativo ? "Desativar" : "Ativar", onConfirm: () => toggleRule(rule) })} aria-label={rule.ativo ? "Desativar" : "Ativar"} className="grid min-h-10 min-w-10 place-items-center rounded-lg border border-gray-200 hover:bg-gray-50"><FaPowerOff /></button></div>
           </article>)}
-        </div></section>)}
+        </div>}</section>; })}
       </> : <Categories categories={metadata.categorias} editing={categoryEditing} form={categoryForm} setEditing={setCategoryEditing} setForm={setCategoryForm} save={saveCategory} remove={(category) => setPendingAction({ title: "Excluir categoria", description: `Excluir a categoria “${category.nome}”? Esta ação não poderá ser desfeita.`, confirmLabel: "Excluir", destructive: true, onConfirm: () => removeCategory(category) })} />}
     </div>
     {(editing !== null || (editing === null && form !== EMPTY_RULE && form.sensoId)) && <RuleDialog editing={editing} form={form} setForm={setForm} metadata={metadata} save={saveRule} close={() => { setEditing(null); setForm(EMPTY_RULE); }} />}
