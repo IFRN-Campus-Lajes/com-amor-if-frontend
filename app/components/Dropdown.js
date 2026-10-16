@@ -48,7 +48,7 @@ const Dropdown = ({ username }) => {
             <>
               <li>
                 <a
-                  href="/god-mode"
+                  href="/wizard-area"
                   className="flex items-center gap-2 rounded-md bg-amber-50 py-2 px-4 font-semibold text-amber-900 hover:bg-amber-100 transition duration-200 ease-in-out"
                 >
                   <FaCrown /> Área do Mago

@@ -10,7 +10,7 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import MessageBox from "../components/MessageBox";
 import NotAuthorized from "../components/NotAuthorized";
 
-const EMPTY_RULE = { descricao: "", grupo: "", categoria: "", operacao: "SUM", valorMinimo: 0, valorMaximo: 0, sensoId: "", tipoRegraId: "", roleIds: [], ativo: true };
+const EMPTY_RULE = { descricao: "", grupo: "", categoriaId: "", categoria: "", operacao: "SUM", valorMinimo: 0, valorMaximo: 0, sensoId: "", tipoRegraId: "", roleIds: [], ativo: true };
 const EMPTY_CATEGORY = { nome: "", sensoId: "", ativo: true };
 const FREQUENCIES = ["Anual", "Bimestral", "Avulsa"];
 const SENSE_TAB_STYLES = {
@@ -23,7 +23,7 @@ const SENSE_TAB_STYLES = {
 
 const errorText = (error) => error?.response?.data?.errors?.[0] || error?.response?.data?.message || "Não foi possível concluir a operação.";
 
-export default function GodModePage() {
+export default function WizardAreaPage() {
   const { user, getToken, isLoading } = useAuth();
   const token = getToken();
   const [rules, setRules] = useState([]);
@@ -98,13 +98,16 @@ export default function GodModePage() {
   const openRule = (rule = null, context = {}) => {
     const defaultSenseId = context.sensoId || selectedSense?.id || metadata.sensos?.[0]?.id || "";
     const defaultCategory = context.categoria || "";
+    const defaultCategoryId = context.categoria
+      ? metadata.categorias.find((category) => category.nome === context.categoria && String(category.senso?.id) === String(defaultSenseId))?.id || ""
+      : "";
     setEditing(rule);
     setForm(rule ? {
-      descricao: rule.descricao, grupo: rule.grupo || "", categoria: rule.categoria || "",
+      descricao: rule.descricao, grupo: rule.grupo || "", categoriaId: String(rule.categoriaId || ""), categoria: rule.categoria || "",
       operacao: rule.operacao, valorMinimo: rule.valorMinimo, valorMaximo: rule.valorMaximo,
       sensoId: String(rule.sensoId), tipoRegraId: String(rule.tipoRegraId), roleIds: rule.roleIds,
       ativo: rule.ativo,
-    } : { ...EMPTY_RULE, sensoId: String(defaultSenseId), tipoRegraId: metadata.tipos?.[0]?.id || "", categoria: defaultCategory });
+    } : { ...EMPTY_RULE, sensoId: String(defaultSenseId), tipoRegraId: metadata.tipos?.[0]?.id || "", categoriaId: String(defaultCategoryId), categoria: defaultCategory });
   };
 
   const saveRule = async (event) => {
@@ -113,7 +116,7 @@ export default function GodModePage() {
       const selectedType = metadata.tipos.find((item) => String(item.id) === String(form.tipoRegraId));
       const minimo = Number(form.valorMinimo);
       const maximo = selectedType?.fixo ? minimo : Math.max(minimo, Number(form.valorMaximo));
-      const payload = { ...form, sensoId: Number(form.sensoId), tipoRegraId: Number(form.tipoRegraId), valorMinimo: minimo, valorMaximo: maximo, roleIds: form.roleIds.map(Number) };
+      const payload = { ...form, categoriaId: Number(form.categoriaId) || null, sensoId: Number(form.sensoId), tipoRegraId: Number(form.tipoRegraId), valorMinimo: minimo, valorMaximo: maximo, roleIds: form.roleIds.map(Number) };
       const savedRule = editing
         ? await putPrivateData(`admin/regras/${editing.id}`, payload, token)
         : await postPrivateData("admin/regras", payload, token);
@@ -131,7 +134,7 @@ export default function GodModePage() {
   const saveCategory = async (event) => {
     event.preventDefault();
     try {
-      if (categoryEditing) await putPrivateData(`admin/categorias-regras/${categoryEditing.senso.id}/${encodeURIComponent(categoryEditing.nome)}`, categoryForm, token);
+      if (categoryEditing) await putPrivateData(`admin/categorias-regras/${categoryEditing.id}`, categoryForm, token);
       else await postPrivateData("admin/categorias-regras", categoryForm, token);
       setCategoryEditing(null); setCategoryForm(EMPTY_CATEGORY); await load();
       setMessage({ type: "success", text: "Categoria salva com sucesso." });
@@ -139,7 +142,7 @@ export default function GodModePage() {
   };
 
   const removeCategory = async (category) => {
-    try { await deletePrivateData(`admin/categorias-regras/${category.senso.id}/${encodeURIComponent(category.nome)}`, token); await load(); }
+    try { await deletePrivateData(`admin/categorias-regras/${category.id}`, token); await load(); }
     catch (error) { setMessage({ type: "error", text: errorText(error) }); }
   };
 
@@ -232,8 +235,8 @@ function RuleDialog({ editing, form, setForm, metadata, save, close }) {
     : [...form.roleIds, roleId]);
   return <div className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-black/50 p-3 sm:py-10"><form ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="rule-dialog-title" onSubmit={save} className="w-full max-w-3xl rounded-2xl bg-white shadow-2xl"><header className="flex items-start justify-between gap-3 border-b p-4 sm:p-5"><div className="min-w-0"><h2 id="rule-dialog-title" className="text-xl font-black">{editing ? "Editar regra" : "Criar nova regra"}</h2>{editing && <p className="mt-1 text-sm text-gray-500">Se houver lançamentos, uma nova versão será criada para preservar o histórico.</p>}</div><button type="button" onClick={close} className="shrink-0 text-2xl" aria-label="Fechar">×</button></header><div className="grid gap-4 p-4 sm:grid-cols-2 sm:p-5">
     <label className="sm:col-span-2 text-sm font-semibold">Descrição<input value={form.descricao} onChange={(e) => set("descricao", e.target.value)} className="mt-2 min-h-11 w-full rounded-lg border px-3 text-sm" required /></label>
-    <label className="text-sm font-semibold">Senso<select value={form.sensoId} onChange={(e) => setForm({ ...form, sensoId: e.target.value, categoria: "" })} className="mt-2 min-h-11 w-full rounded-lg border bg-white px-3 text-sm" required>{metadata.sensos.map((item) => <option key={item.id} value={item.id}>{item.descricao}</option>)}</select></label>
-    <CategoryPicker categories={activeCategories} value={form.categoria} select={(value) => set("categoria", value)} />
+    <label className="text-sm font-semibold">Senso<select value={form.sensoId} onChange={(e) => setForm({ ...form, sensoId: e.target.value, categoriaId: "", categoria: "" })} className="mt-2 min-h-11 w-full rounded-lg border bg-white px-3 text-sm" required>{metadata.sensos.map((item) => <option key={item.id} value={item.id}>{item.descricao}</option>)}</select></label>
+    <CategoryPicker categories={activeCategories} value={form.categoria} select={(category) => setForm({ ...form, categoriaId: String(category.id), categoria: category.nome })} clear={() => setForm({ ...form, categoriaId: "", categoria: "" })} />
     <label className="sm:col-span-2 text-sm font-semibold">Tipo de regra<select value={form.tipoRegraId} onChange={(e) => set("tipoRegraId", e.target.value)} className="mt-2 min-h-11 w-full rounded-lg border bg-white px-3 text-sm" required><option value="">Selecione</option>{fixedTypes.length > 0 && <optgroup label="Valor fixo">{fixedTypes.map((item) => <option key={item.id} value={item.id}>{item.descricao}</option>)}</optgroup>}{variableTypes.length > 0 && <optgroup label="Valor variável">{variableTypes.map((item) => <option key={item.id} value={item.id}>{item.descricao}</option>)}</optgroup>}</select><span className="mt-1 block text-xs font-normal text-gray-500">{type?.fixo ? "Aplica sempre a mesma pontuação." : type ? "Permite definir um intervalo de pontos." : "Tipos organizados pela forma de cálculo."}</span></label>
     <label className="text-sm font-semibold">Operação<select value={form.operacao} onChange={(e) => set("operacao", e.target.value)} className="mt-2 min-h-11 w-full rounded-lg border bg-white px-3"><option value="SUM">Adicionar pontos</option><option value="SUB">Subtrair pontos</option></select></label>
     {editing && form.grupo && <label className="text-sm font-semibold">Grupo<input value={form.grupo} className="mt-2 min-h-11 w-full rounded-lg border bg-gray-50 px-3 text-gray-600" readOnly aria-readonly="true" /></label>}
@@ -244,11 +247,13 @@ function RuleDialog({ editing, form, setForm, metadata, save, close }) {
   </div><footer className="flex flex-col-reverse gap-3 border-t p-4 sm:flex-row sm:justify-end sm:p-5"><button type="button" onClick={close} className="min-h-11 rounded-lg border px-5 py-2.5 font-semibold">Cancelar</button><button className="min-h-11 rounded-lg bg-primary px-5 py-2.5 font-bold text-white">{editing ? "Salvar versão" : "Criar regra"}</button></footer></form></div>;
 }
 
-function CategoryPicker({ categories, value, select }) {
+function CategoryPicker({ categories, value, select, clear }) {
   const [open, setOpen] = useState(false);
-  const normalized = value.toLocaleLowerCase();
+  const [query, setQuery] = useState(value);
+  useEffect(() => setQuery(value), [value]);
+  const normalized = query.toLocaleLowerCase();
   const options = categories.filter((item) => !normalized || item.nome.toLocaleLowerCase().includes(normalized));
-  return <label className="relative text-sm font-semibold">Categoria<input value={value} onChange={(event) => { select(event.target.value); setOpen(true); }} onFocus={() => setOpen(true)} onBlur={() => setOpen(false)} placeholder="Pesquisar categoria" autoComplete="off" className="mt-2 min-h-11 w-full rounded-lg border px-3 text-sm" required />{open && <div className="absolute z-20 mt-1 max-h-52 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white p-1 shadow-lg">{options.length > 0 ? options.map((item) => <button key={`${item.senso.id}-${item.nome}`} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { select(item.nome); setOpen(false); }} className="block w-full rounded-md px-3 py-2 text-left text-sm font-normal text-gray-800 hover:bg-emerald-50 hover:text-primary">{item.nome}</button>) : <p className="px-3 py-2 text-sm font-normal text-gray-500">Nenhuma categoria neste senso.</p>}</div>}<span className="mt-1 block text-xs font-normal text-gray-500">Digite para filtrar e escolha uma opção.</span></label>;
+  return <label className="relative text-sm font-semibold">Categoria<input value={query} onChange={(event) => { setQuery(event.target.value); clear(); setOpen(true); }} onFocus={() => setOpen(true)} onBlur={() => { setOpen(false); if (!value) setQuery(""); }} placeholder="Pesquisar categoria" autoComplete="off" className="mt-2 min-h-11 w-full rounded-lg border px-3 text-sm" required />{open && <div className="absolute z-20 mt-1 max-h-52 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white p-1 shadow-lg">{options.length > 0 ? options.map((item) => <button key={item.id} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { select(item); setQuery(item.nome); setOpen(false); }} className="block w-full rounded-md px-3 py-2 text-left text-sm font-normal text-gray-800 hover:bg-emerald-50 hover:text-primary">{item.nome}</button>) : <p className="px-3 py-2 text-sm font-normal text-gray-500">Nenhuma categoria neste senso.</p>}</div>}<span className="mt-1 block text-xs font-normal text-gray-500">Digite para filtrar e escolha uma opção.</span></label>;
 }
 
 function ConfirmationDialog({ title, description, confirmLabel, destructive, onConfirm, close }) {
