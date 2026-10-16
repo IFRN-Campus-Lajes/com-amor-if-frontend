@@ -72,16 +72,19 @@ export const groupRulesByCategory = (rules = []) =>
     return groups;
   }, {});
 
-export const orderRuleGroups = (groups = []) => [
-  ...groups.filter(
-    ([groupName]) =>
-      groupName !== "Outros" && groupName !== UNGROUPED_RULES_LABEL
-  ),
-  ...groups.filter(
-    ([groupName]) =>
-      groupName === "Outros" || groupName === UNGROUPED_RULES_LABEL
-  ),
-];
+export const isLastRuleCategory = (groupName = "") =>
+  ["outros", normalizeSearchValue(UNGROUPED_RULES_LABEL)].includes(
+    normalizeSearchValue(groupName)
+  );
+
+export const orderRuleGroups = (groups = []) => [...groups].sort(([nameA], [nameB]) => {
+  const rank = (name) => normalizeSearchValue(name) === "outros" ? 1
+    : normalizeSearchValue(name) === normalizeSearchValue(UNGROUPED_RULES_LABEL) ? 2 : 0;
+  const rankA = rank(nameA);
+  const rankB = rank(nameB);
+  if (rankA !== rankB) return rankA - rankB;
+  return nameA.localeCompare(nameB, "pt-BR", { sensitivity: "base" });
+});
 
 const RuleSelect = ({ rules = [], selectedRuleId, onChange }) => {
   const containerRef = useRef(null);

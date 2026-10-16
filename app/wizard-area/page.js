@@ -9,6 +9,7 @@ import { isFromCategory } from "../../utils/role";
 import LoadingSpinner from "../components/LoadingSpinner";
 import MessageBox from "../components/MessageBox";
 import NotAuthorized from "../components/NotAuthorized";
+import { isLastRuleCategory } from "../components/RuleSelect";
 
 const EMPTY_RULE = { descricao: "", grupo: "", categoriaId: "", categoria: "", operacao: "SUM", valorMinimo: 0, valorMaximo: 0, sensoId: "", tipoRegraId: "", roleIds: [], ativo: true };
 const EMPTY_CATEGORY = { nome: "", sensoId: "", ativo: true };
@@ -83,7 +84,12 @@ export default function WizardAreaPage() {
     .sort((a, b) => Number(b.versao) - Number(a.versao));
   const categorySections = useMemo(() => {
     const categories = metadata.categorias.filter((item) => String(item.senso?.id) === String(selectedSense?.id))
-      .sort((a, b) => Number(b.ativo) - Number(a.ativo) || a.nome.localeCompare(b.nome));
+      .sort((a, b) => {
+        const lastA = isLastRuleCategory(a.nome);
+        const lastB = isLastRuleCategory(b.nome);
+        if (lastA !== lastB) return lastA ? 1 : -1;
+        return Number(b.ativo) - Number(a.ativo) || a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" });
+      });
     const knownNames = new Set(categories.map((item) => item.nome));
     const sections = categories
       .filter((item) => grouped[item.nome]?.length || (!search && status === "all"))
@@ -189,7 +195,12 @@ export default function WizardAreaPage() {
 }
 
 function Categories({ categories, sensos, openNew, edit, remove }) {
-  const groupedBySense = sensos.map((senso) => ({ senso, categories: categories.filter((item) => String(item.senso?.id) === String(senso.id)).sort((a, b) => Number(b.ativo) - Number(a.ativo) || a.nome.localeCompare(b.nome)) }));
+  const groupedBySense = sensos.map((senso) => ({ senso, categories: categories.filter((item) => String(item.senso?.id) === String(senso.id)).sort((a, b) => {
+    const lastA = isLastRuleCategory(a.nome);
+    const lastB = isLastRuleCategory(b.nome);
+    if (lastA !== lastB) return lastA ? 1 : -1;
+    return Number(b.ativo) - Number(a.ativo) || a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" });
+  }) }));
   return <div><div className="mb-5 flex justify-end"><button type="button" onClick={() => openNew()} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white sm:w-auto"><FaPlus /> Nova categoria</button></div><section className="space-y-5">{groupedBySense.map(({ senso, categories: senseCategories }) => <section key={senso.id} className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"><header className="flex items-center justify-between gap-3 border-b bg-gray-50 px-4 py-3"><div><h2 className="text-sm font-bold text-gray-900">{senso.descricao}</h2><p className="mt-0.5 text-xs text-gray-500">{senseCategories.length} {senseCategories.length === 1 ? "categoria" : "categorias"}</p></div><button type="button" onClick={() => openNew(senso.id)} className="inline-flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-primary hover:bg-emerald-50"><FaPlus /> Adicionar</button></header>{senseCategories.length === 0 ? <p className="p-5 text-sm text-gray-500">Nenhuma categoria neste senso.</p> : senseCategories.map((item) => <article key={`${item.senso.id}-${item.nome}`} className={`flex flex-col items-start justify-between gap-3 border-b border-gray-100 p-4 last:border-0 sm:flex-row sm:items-center ${!item.ativo ? "bg-gray-50" : ""}`}><h3 className="min-w-0 break-words text-sm font-semibold text-gray-900">{item.nome}</h3><div className="flex flex-wrap items-center gap-2"><span className={`rounded-full px-2 py-1 text-xs font-bold ${item.ativo ? "bg-emerald-100 text-emerald-700" : "bg-gray-200 text-gray-600"}`}>{item.ativo ? "Ativa" : "Inativa"}</span><button onClick={() => edit(item)} className="grid h-10 w-10 place-items-center rounded-lg border" aria-label="Editar"><FaPen /></button><button onClick={() => remove(item)} className="grid h-10 w-10 place-items-center rounded-lg border text-red-700" aria-label="Excluir"><FaTrashCan /></button></div></article>)}</section>)}</section></div>;
 }
 
@@ -228,7 +239,14 @@ function RuleDialog({ editing, form, setForm, metadata, save, close }) {
   const dialogRef = useModalAccessibility(close);
   const type = metadata.tipos.find((item) => String(item.id) === String(form.tipoRegraId));
   const set = (key, value) => setForm({ ...form, [key]: value });
-  const activeCategories = metadata.categorias.filter((item) => (item.ativo || item.nome === form.categoria) && String(item.senso?.id) === String(form.sensoId));
+  const activeCategories = metadata.categorias
+    .filter((item) => (item.ativo || item.nome === form.categoria) && String(item.senso?.id) === String(form.sensoId))
+    .sort((a, b) => {
+      const lastA = isLastRuleCategory(a.nome);
+      const lastB = isLastRuleCategory(b.nome);
+      if (lastA !== lastB) return lastA ? 1 : -1;
+      return a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" });
+    });
   const fixedTypes = metadata.tipos.filter((item) => item.fixo);
   const variableTypes = metadata.tipos.filter((item) => !item.fixo);
   const toggleRole = (roleId) => set("roleIds", form.roleIds.includes(roleId)
@@ -251,10 +269,30 @@ function RuleDialog({ editing, form, setForm, metadata, save, close }) {
 function CategoryPicker({ categories, value, select, clear }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState(value);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const activeOptionRef = useRef(null);
   useEffect(() => setQuery(value), [value]);
   const normalized = query.toLocaleLowerCase();
   const options = categories.filter((item) => !normalized || item.nome.toLocaleLowerCase().includes(normalized));
-  return <label className="relative text-sm font-semibold">Categoria<input value={query} onChange={(event) => { setQuery(event.target.value); clear(); setOpen(true); }} onFocus={() => setOpen(true)} onBlur={() => { setOpen(false); if (!value) setQuery(""); }} placeholder="Pesquisar categoria" autoComplete="off" className="mt-2 min-h-11 w-full rounded-lg border px-3 text-sm" required />{open && <div className="absolute z-20 mt-1 max-h-52 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white p-1 shadow-lg">{options.length > 0 ? options.map((item) => <button key={item.id} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { select(item); setQuery(item.nome); setOpen(false); }} className="block w-full rounded-md px-3 py-2 text-left text-sm font-normal text-gray-800 hover:bg-emerald-50 hover:text-primary">{item.nome}</button>) : <p className="px-3 py-2 text-sm font-normal text-gray-500">Nenhuma categoria neste senso.</p>}</div>}<span className="mt-1 block text-xs font-normal text-gray-500">Digite para filtrar e escolha uma opção.</span></label>;
+  useEffect(() => {
+    if (open) activeOptionRef.current?.scrollIntoView?.({ block: "nearest" });
+  }, [activeIndex, open]);
+  const choose = (item) => { select(item); setQuery(item.nome); setOpen(false); };
+  const handleKeyDown = (event) => {
+    if (event.key === "Escape") { event.preventDefault(); setOpen(false); return; }
+    if (!options.length) return;
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      setOpen(true);
+      const direction = event.key === "ArrowDown" ? 1 : -1;
+      setActiveIndex((current) => (current + direction + options.length) % options.length);
+    }
+    if (event.key === "Enter" && open) {
+      event.preventDefault();
+      choose(options[activeIndex] || options[0]);
+    }
+  };
+  return <label className="relative text-sm font-semibold">Categoria<input value={query} onChange={(event) => { setQuery(event.target.value); clear(); setActiveIndex(0); setOpen(true); }} onFocus={() => { setActiveIndex(Math.max(0, options.findIndex((item) => String(item.id) === String(categories.find((category) => category.nome === value)?.id)))); setOpen(true); }} onBlur={() => { setOpen(false); if (!value) setQuery(""); }} onKeyDown={handleKeyDown} placeholder="Pesquisar categoria" autoComplete="off" role="combobox" aria-autocomplete="list" aria-expanded={open} aria-controls="category-options" aria-activedescendant={open && options[activeIndex] ? `category-option-${options[activeIndex].id}` : undefined} className="mt-2 min-h-11 w-full rounded-lg border px-3 text-sm" required />{open && <div id="category-options" role="listbox" aria-label="Categorias disponíveis" className="absolute z-20 mt-1 max-h-52 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white p-1 shadow-lg">{options.length > 0 ? options.map((item, index) => <button ref={index === activeIndex ? activeOptionRef : null} id={`category-option-${item.id}`} key={item.id} type="button" role="option" aria-selected={index === activeIndex} onMouseEnter={() => setActiveIndex(index)} onMouseDown={(event) => event.preventDefault()} onClick={() => choose(item)} className={`block w-full rounded-md px-3 py-2 text-left text-sm font-normal ${index === activeIndex ? "bg-emerald-50 text-primary" : "text-gray-800 hover:bg-emerald-50 hover:text-primary"}`}>{item.nome}</button>) : <p className="px-3 py-2 text-sm font-normal text-gray-500">Nenhuma categoria neste senso.</p>}</div>}<span className="mt-1 block text-xs font-normal text-gray-500">Digite para filtrar; use ↑ e ↓ para navegar e Enter para escolher.</span></label>;
 }
 
 function ConfirmationDialog({ title, description, confirmLabel, destructive, onConfirm, close }) {
