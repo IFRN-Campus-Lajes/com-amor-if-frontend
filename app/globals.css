@@ -36,6 +36,13 @@ body {
   100% { opacity: 0; transform: scale(1.8) translate3d(-7px, 7px, 0); }
 }
 
+@keyframes wizard-float {
+  0%, 100% { transform: translateY(0) rotate(-2deg); filter: drop-shadow(0 4px 5px rgb(22 107 71 / 20%)); }
+  50% { transform: translateY(-7px) rotate(2deg); filter: drop-shadow(0 9px 9px rgb(244 180 0 / 35%)); }
+}
+
+.wizard-mascot { image-rendering: pixelated; }
+
 .rocket-smoke {
   position: absolute;
   bottom: -0.05rem;
@@ -52,8 +59,10 @@ body {
   .ranking-progress { animation: ranking-progress-grow 900ms cubic-bezier(0.22, 1, 0.36, 1) both; }
   .rocket-flight { animation: rocket-flight 2.4s ease-out both; }
   .rocket-smoke { animation: rocket-smoke-puff 650ms ease-out 3 both; }
+  .wizard-mascot { animation: wizard-float 2.8s ease-in-out infinite; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .rocket-smoke { display: none; }
+  .wizard-mascot { animation: none; }
 }

@@ -35,7 +35,7 @@ const MessageBox = ({ message, color = "detail", onClose, timeout = 5000 }) => {
   return (
     <div
       className={clsx(
-        "fixed top-4 left-1/2 transform -translate-x-1/2 max-w-sm w-full p-4 shadow-lg rounded-md z-50",
+        "fixed top-4 left-1/2 transform -translate-x-1/2 max-w-sm w-full p-4 shadow-lg rounded-md z-[90]",
         `bg-${color}`,
         `border-${color}`
       )}

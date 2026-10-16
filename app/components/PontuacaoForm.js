@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FaCircleCheck, FaCircleMinus, FaCirclePlus } from "react-icons/fa6";
 import RuleSelect from "./RuleSelect";
 
@@ -29,6 +29,10 @@ const PontuacaoForm = ({
     idOlimpiada: "",
   });
   const [tipoRegra, setTipoRegra] = useState(null);
+
+  useEffect(() => {
+    setRegras(regrasDisponiveis || []);
+  }, [regrasDisponiveis]);
 
   const handleRegraChange = (regraId) => {
     const regraSelecionada = regras.find(

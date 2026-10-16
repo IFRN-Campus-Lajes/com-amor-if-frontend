@@ -14,7 +14,7 @@ const Header = () => {
   const { user } = useAuth();
 
   return (
-    <header id="home" className="bg-primary text-white shadow-md">
+    <header id="home" className="relative z-50 bg-primary text-white shadow-md">
       <div className="container mx-auto p-4 flex justify-between items-center">
         {/* Logo */}
         <HomeLink />
