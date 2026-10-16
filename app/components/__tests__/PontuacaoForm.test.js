@@ -41,6 +41,20 @@ const olympiadRule = {
 };
 
 describe("PontuacaoForm com seletor de regras pesquisável", () => {
+  it("atualiza o seletor quando novas regras chegam da API", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(
+      <PontuacaoForm regrasDisponiveis={[fixedRule]} turmasDisponiveis={classes} onSubmit={jest.fn()} />
+    );
+
+    rerender(
+      <PontuacaoForm regrasDisponiveis={[fixedRule, variableRule]} turmasDisponiveis={classes} onSubmit={jest.fn()} />
+    );
+    await user.click(screen.getByRole("combobox", { name: /buscar regra/i }));
+
+    expect(screen.getByRole("option", { name: variableRule.descricao })).toBeInTheDocument();
+  });
+
   it("mantém os efeitos de uma regra fixa ao selecioná-la pela busca", async () => {
     const user = userEvent.setup();
     render(

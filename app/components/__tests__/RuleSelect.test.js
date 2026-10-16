@@ -57,8 +57,8 @@ describe("groupRulesByCategory", () => {
     ];
 
     expect(orderRuleGroups(groups).map(([groupName]) => groupName)).toEqual([
-      "Rotina",
       "Biblioteca",
+      "Rotina",
       "Outros",
       UNGROUPED_RULES_LABEL,
     ]);
@@ -228,8 +228,8 @@ describe("RuleSelect", () => {
     await user.click(search);
     await user.keyboard("{ArrowDown}{Enter}");
 
-    expect(onChange).toHaveBeenCalledWith("2");
-    expect(search).toHaveValue("Livro devolvido no prazo");
+    expect(onChange).toHaveBeenCalledWith("3");
+    expect(search).toHaveValue("Uso adequado do laboratório");
   });
 
   it("mantém a opção ativa visível durante a navegação pelo teclado", async () => {
@@ -260,7 +260,7 @@ describe("RuleSelect", () => {
     );
 
     expect(scrollIntoView).toHaveBeenLastCalledWith({ block: "center" });
-    expect(search).toHaveAttribute("aria-activedescendant", "rule-option-1");
+    expect(search).toHaveAttribute("aria-activedescendant", "rule-option-2");
 
     delete window.HTMLElement.prototype.scrollIntoView;
   });
@@ -278,7 +278,7 @@ describe("RuleSelect", () => {
     );
 
     expect(scrollIntoView).toHaveBeenLastCalledWith({ block: "center" });
-    expect(search).toHaveAttribute("aria-activedescendant", "rule-option-1");
+    expect(search).toHaveAttribute("aria-activedescendant", "rule-option-2");
 
     delete window.HTMLElement.prototype.scrollIntoView;
   });
@@ -303,8 +303,8 @@ describe("RuleSelect", () => {
     await user.click(search);
     await user.keyboard("{ArrowDown}{Enter}");
 
-    expect(onChange).toHaveBeenCalledWith("3");
-    expect(search).toHaveValue("Uso adequado do laboratório");
+    expect(onChange).toHaveBeenCalledWith("1");
+    expect(search).toHaveValue("Organização dos materiais");
   });
 
   it("limpa uma seleção anterior quando o usuário edita o texto", async () => {

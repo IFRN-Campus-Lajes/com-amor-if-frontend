@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { FaUserCircle } from "react-icons/fa"; // Importando o ícone
+import { FaCrown, FaUserCircle } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "../../providers/AuthProvider";
@@ -43,9 +43,17 @@ const Dropdown = ({ username }) => {
         {username}
       </button>
       {isOpen && (
-        <ul className="absolute right-0 mt-2 bg-white text-black p-2 rounded-lg shadow-lg w-48">
+        <ul className="absolute right-0 z-[60] mt-2 bg-white text-black p-2 rounded-lg shadow-lg w-52">
           {isFromCategory(user, "Admin") && (
             <>
+              <li>
+                <a
+                  href="/wizard-area"
+                  className="flex items-center gap-2 rounded-md bg-amber-50 py-2 px-4 font-semibold text-amber-900 hover:bg-amber-100 transition duration-200 ease-in-out"
+                >
+                  <FaCrown /> Área do Mago
+                </a>
+              </li>
               <li>
                 <a
                   href="/groups"
