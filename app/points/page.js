@@ -129,6 +129,13 @@ const PointsPage = () => {
 
     try {
       const createdPoints = await postPrivateData("pontuacao/lancar", dataToSend, token);
+      if (!Array.isArray(createdPoints) || createdPoints.length === 0) {
+        setMessages({
+          error:
+            "Nenhuma pontuação foi criada. Verifique se há turmas cadastradas para o turno selecionado.",
+        });
+        return;
+      }
       setMessages({
         success:
           createdPoints.length > 1
