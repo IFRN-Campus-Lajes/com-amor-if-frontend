@@ -1,7 +1,6 @@
 import {
   formatPointMotivation,
   formatPointSchoolClasses,
-  formatPointScope,
   groupCollectivePoints,
 } from "../point";
 
@@ -51,8 +50,7 @@ describe("groupCollectivePoints", () => {
     expect(grouped).toHaveLength(1);
     expect(grouped[0].collective).toBe(true);
     expect(grouped[0].groupedPoints).toHaveLength(2);
-    expect(formatPointSchoolClasses(grouped[0])).toBe("2 turmas: 1º A, 1º B");
-    expect(formatPointScope(grouped[0])).toBe("Coletiva • Matutino • 2 turmas");
+    expect(formatPointSchoolClasses(grouped[0])).toBe("Coletiva • Matutino");
   });
 
   it("mantém lançamentos individuais separados", () => {
@@ -63,7 +61,7 @@ describe("groupCollectivePoints", () => {
 
     expect(grouped).toHaveLength(2);
     expect(grouped.every((point) => !point.collective)).toBe(true);
-    expect(formatPointScope(grouped[0])).toBe("Individual");
+    expect(formatPointSchoolClasses(grouped[0])).toBe("1º A");
   });
 
   it("não mistura dois lançamentos coletivos do mesmo turno", () => {

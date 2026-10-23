@@ -7,6 +7,7 @@ import MessageBox from "../components/MessageBox";
 import NotAuthorized from "../components/NotAuthorized";
 import LoadingSpinner from "../components/LoadingSpinner";
 import Modal from "../components/Modal";
+import PointSchoolClassCell from "../components/PointSchoolClassCell";
 import { fetchPrivateData, postPrivateData } from "../../utils/api";
 import { useAuth } from "../../providers/AuthProvider";
 import { format } from "date-fns";
@@ -14,8 +15,6 @@ import NoOpenSchoolYearNotice from "../components/NoOpenSchoolYearNotice";
 import { useOpenSchoolYear } from "../hooks/useOpenSchoolYear";
 import {
   formatPointMotivation,
-  formatPointSchoolClasses,
-  formatPointScope,
   getPointSchoolClassNames,
   groupCollectivePoints,
 } from "../../utils/point";
@@ -297,7 +296,6 @@ const PointsValidationPage = () => {
         searchText="Buscar pelo nome da turma..."
         headers={[
           "Nome da Turma",
-          "Abrangência",
           "Bimestre",
           "Regra",
           "Motivacao",
@@ -310,8 +308,7 @@ const PointsValidationPage = () => {
         data={filteredPoints
           .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
           .map((pontuacao) => ({
-            nome_da_turma: formatPointSchoolClasses(pontuacao),
-            "abrangência": formatPointScope(pontuacao),
+            nome_da_turma: <PointSchoolClassCell point={pontuacao} />,
             bimestre:
               pontuacao.bimestre === 4 ? "Extra" : pontuacao.bimestre + 1,
             contador: pontuacao.contador,

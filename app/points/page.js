@@ -8,6 +8,7 @@ import MessageBox from "../components/MessageBox";
 import NotAuthorized from "../components/NotAuthorized";
 import LoadingSpinner from "../components/LoadingSpinner";
 import Modal from "../components/Modal";
+import PointSchoolClassCell from "../components/PointSchoolClassCell";
 import { fetchPrivateData, postPrivateData } from "../../utils/api";
 import { useAuth } from "../../providers/AuthProvider";
 import PontuacaoForm from "../components/PontuacaoForm";
@@ -18,8 +19,6 @@ import { useOpenSchoolYear } from "../hooks/useOpenSchoolYear";
 import { orderSenseNames } from "../../utils/senses";
 import {
   formatPointMotivation,
-  formatPointSchoolClasses,
-  formatPointScope,
   getPointSchoolClassNames,
   groupCollectivePoints,
 } from "../../utils/point";
@@ -305,7 +304,6 @@ const PointsPage = () => {
             searchText="Buscar pelo nome da turma..."
             headers={[
               "Nome da Turma",
-              "Abrangência",
               "Regra",
               "Motivacao",
               "Operacao",
@@ -321,8 +319,9 @@ const PointsPage = () => {
                       currentPage * itemsPerPage
                     )
                     .map((pontuacao) => ({
-                      nome_da_turma: formatPointSchoolClasses(pontuacao),
-                      "abrangência": formatPointScope(pontuacao),
+                      nome_da_turma: (
+                        <PointSchoolClassCell point={pontuacao} />
+                      ),
                       regra: pontuacao.regra.descricao,
                       motivacao: formatPointMotivation(pontuacao),
                       operacao:

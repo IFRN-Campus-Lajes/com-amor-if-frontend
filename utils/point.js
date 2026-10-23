@@ -67,12 +67,6 @@ export const getPointSchoolClassNames = (point) =>
 export const formatPointSchoolClasses = (point) => {
   const names = getPointSchoolClassNames(point);
   if (!point?.collective) return names[0] || "—";
-  return `${names.length} turmas: ${names.join(", ")}`;
-};
-
-export const formatPointScope = (point) => {
-  if (!point?.collective) return "Individual";
   const turn = TURN_NAMES[point?.turno] || "Turno não informado";
-  const count = getPointSchoolClassNames(point).length;
-  return `Coletiva • ${turn} • ${count} ${count === 1 ? "turma" : "turmas"}`;
+  return `Coletiva • ${turn}`;
 };
