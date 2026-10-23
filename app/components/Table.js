@@ -10,6 +10,7 @@ const Table = ({
   searchValue,
   onSearch,
   searchText = "Buscar...",
+  rowClassName,
 }) => {
   return (
     <div>
@@ -58,7 +59,10 @@ const Table = ({
               </tr>
             ) : (
               data.map((row, index) => (
-                <tr key={index} className="hover:bg-gray-50">
+                <tr
+                  key={index}
+                  className={`hover:bg-gray-50 ${rowClassName?.(row) || ""}`}
+                >
                   {headers.map((header, idx) => (
                     <td
                       key={idx}

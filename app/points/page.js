@@ -8,6 +8,7 @@ import MessageBox from "../components/MessageBox";
 import NotAuthorized from "../components/NotAuthorized";
 import LoadingSpinner from "../components/LoadingSpinner";
 import Modal from "../components/Modal";
+import PointSchoolClassCell from "../components/PointSchoolClassCell";
 import { fetchPrivateData, postPrivateData } from "../../utils/api";
 import { useAuth } from "../../providers/AuthProvider";
 import PontuacaoForm from "../components/PontuacaoForm";
@@ -16,7 +17,11 @@ import NoOpenSchoolYearNotice from "../components/NoOpenSchoolYearNotice";
 import NoSchoolClassesNotice from "../components/NoSchoolClassesNotice";
 import { useOpenSchoolYear } from "../hooks/useOpenSchoolYear";
 import { orderSenseNames } from "../../utils/senses";
-import { formatPointMotivation } from "../../utils/point";
+import {
+  formatPointMotivation,
+  getPointSchoolClassNames,
+  groupCollectivePoints,
+} from "../../utils/point";
 
 // Cores para cada senso
 const SENSE_COLORS = {
@@ -56,7 +61,7 @@ const PointsPage = () => {
           "pontuacao/pontuacaoPorServidor",
           token
         );
-        const groupedBySenso = data.reduce((acc, pontuacao) => {
+        const groupedBySenso = groupCollectivePoints(data).reduce((acc, pontuacao) => {
           const senso = pontuacao.regra.senso.descricao || "Sem Senso";
           acc[senso] = acc[senso] ? [...acc[senso], pontuacao] : [pontuacao];
           return acc;
@@ -123,8 +128,13 @@ const PointsPage = () => {
     };
 
     try {
-      await postPrivateData("pontuacao/lancar", dataToSend, token);
-      setMessages({ success: "Pontuação lançada com sucesso" });
+      const createdPoints = await postPrivateData("pontuacao/lancar", dataToSend, token);
+      setMessages({
+        success:
+          createdPoints.length > 1
+            ? `Lançamento coletivo criado para ${createdPoints.length} turmas`
+            : "Pontuação lançada com sucesso",
+      });
       setFormData({
         idTurma: "",
         idRegra: "",
@@ -168,7 +178,11 @@ const PointsPage = () => {
 
     try {
       await postPrivateData("pontuacao/deletarPontuacao", dataToSend, token);
-      setMessages({ success: "Pontuação deletada com sucesso" });
+      setMessages({
+        success: deletingPoint.collective
+          ? "Lançamento coletivo deletado de todas as turmas"
+          : "Pontuação deletada com sucesso",
+      });
       fetchPontuacoes();
       setDeleteModalOpen(false);
       setDeletingPoint(null);
@@ -182,7 +196,9 @@ const PointsPage = () => {
   const filterPontuacoes = (search) => {
     setSearchTerm(search);
     const filtered = pontuacoes[activeTab]?.filter((pontuacao) =>
-      pontuacao.turma.nome.toLowerCase().includes(search.toLowerCase())
+      getPointSchoolClassNames(pontuacao).some((name) =>
+        name.toLowerCase().includes(search.toLowerCase())
+      )
     );
     setFilteredPontuacoes(filtered);
   };
@@ -303,7 +319,9 @@ const PointsPage = () => {
                       currentPage * itemsPerPage
                     )
                     .map((pontuacao) => ({
-                      nome_da_turma: pontuacao.turma.nome,
+                      nome_da_turma: (
+                        <PointSchoolClassCell point={pontuacao} />
+                      ),
                       regra: pontuacao.regra.descricao,
                       motivacao: formatPointMotivation(pontuacao),
                       operacao:
@@ -319,7 +337,9 @@ const PointsPage = () => {
                         new Date(pontuacao.createdAt),
                         "dd/MM/yyyy HH:mm:ss"
                       ),
-                      id_turma: pontuacao.idTurma,
+                      id_turma: pontuacao.turma?.id || pontuacao.idTurma,
+                      collective: pontuacao.collective,
+                      schoolClasses: pontuacao.schoolClasses,
                     }))
                 : []
             }
@@ -348,7 +368,11 @@ const PointsPage = () => {
         onClose={() => setDeleteModalOpen(false)}
         onSave={deletePoints}
       >
-        <p>Tem certeza que deseja deletar essa pontuação?</p>
+        <p>
+          {deletingPoint?.collective
+            ? `Este lançamento coletivo será deletado das ${deletingPoint.schoolClasses.length} turmas. Deseja continuar?`
+            : "Tem certeza que deseja deletar essa pontuação?"}
+        </p>
       </Modal>
     </div>
   );
