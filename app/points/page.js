@@ -358,11 +358,6 @@ const PointsPage = () => {
               setCurrentPage(1);
               filterPontuacoes(value);
             }}
-            rowClassName={(row) =>
-              row.collective
-                ? "bg-amber-50 hover:bg-amber-100 border-l-4 border-amber-400"
-                : ""
-            }
           />
         </div>
       )}

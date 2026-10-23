@@ -343,11 +343,6 @@ const PointsValidationPage = () => {
           setCurrentPage(1);
           setSearchTerm(value);
         }}
-        rowClassName={(row) =>
-          row.collective
-            ? "bg-amber-50 hover:bg-amber-100 border-l-4 border-amber-400"
-            : ""
-        }
       />
 
       <Modal
