@@ -318,6 +318,56 @@ describe("RuleSelect", () => {
     expect(onChange).toHaveBeenCalledWith("");
   });
 
+  it("limpa a regra selecionada e mantém o foco para uma nova busca", async () => {
+    const onChange = jest.fn();
+    const user = userEvent.setup();
+    render(<RuleSelect rules={rules} selectedRuleId="2" onChange={onChange} />);
+
+    const search = screen.getByRole("combobox", { name: /buscar regra/i });
+    const clear = screen.getByRole("button", {
+      name: "Limpar regra selecionada",
+    });
+
+    await user.click(clear);
+
+    expect(onChange).toHaveBeenCalledWith("");
+    expect(search).toHaveValue("");
+    expect(search).toHaveFocus();
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
+  });
+
+  it("permite limpar somente o texto pesquisado", async () => {
+    const onChange = jest.fn();
+    const user = userEvent.setup();
+    render(<RuleSelect rules={rules} selectedRuleId="" onChange={onChange} />);
+
+    const search = screen.getByRole("combobox", { name: /buscar regra/i });
+    await user.type(search, "biblioteca");
+    await user.click(
+      screen.getByRole("button", { name: "Limpar regra selecionada" })
+    );
+
+    expect(search).toHaveValue("");
+    expect(search).toHaveFocus();
+    expect(onChange).toHaveBeenCalledWith("");
+  });
+
+  it("não submete o formulário ao limpar a regra", async () => {
+    const onSubmit = jest.fn((event) => event.preventDefault());
+    const user = userEvent.setup();
+    render(
+      <form onSubmit={onSubmit}>
+        <RuleSelect rules={rules} selectedRuleId="2" onChange={jest.fn()} />
+      </form>
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Limpar regra selecionada" })
+    );
+
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
   it("fecha a lista com Escape sem alterar a seleção", async () => {
     const onChange = jest.fn();
     const user = userEvent.setup();
