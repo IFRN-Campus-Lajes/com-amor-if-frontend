@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { FaBolt, FaChevronDown, FaCircleMinus, FaCirclePlus, FaCrown, FaLayerGroup, FaPen, FaPlus, FaPowerOff, FaTrashCan } from "react-icons/fa6";
+import { FaBolt, FaCalendarDays, FaChevronDown, FaCircleMinus, FaCirclePlus, FaCrown, FaGraduationCap, FaLayerGroup, FaPen, FaPlus, FaPowerOff, FaShapes, FaTrashCan } from "react-icons/fa6";
 import { useAuth } from "../../providers/AuthProvider";
 import { deletePrivateData, fetchPrivateData, patchPrivateData, postPrivateData, putPrivateData } from "../../utils/api";
 import { isFromCategory } from "../../utils/role";
@@ -10,6 +10,7 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import MessageBox from "../components/MessageBox";
 import NotAuthorized from "../components/NotAuthorized";
 import { isLastRuleCategory } from "../components/RuleSelect";
+import { ClassesManagement, SchoolYearsManagement, SenseManagement } from "./AdministrativeEntities";
 
 const EMPTY_RULE = { descricao: "", grupo: "", categoriaId: "", categoria: "", operacao: "SUM", valorMinimo: 0, valorMaximo: 0, sensoId: "", tipoRegraId: "", roleIds: [], ativo: true };
 const EMPTY_CATEGORY = { nome: "", sensoId: "", ativo: true };
@@ -41,8 +42,9 @@ export default function WizardAreaPage() {
   const [message, setMessage] = useState(null);
   const [pendingAction, setPendingAction] = useState(null);
   const [collapsedCategories, setCollapsedCategories] = useState({});
+  const notify = useCallback((type, text) => setMessage({ type, text }), []);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setBusy(true);
     try {
       const [ruleData, metaData] = await Promise.all([
@@ -51,12 +53,12 @@ export default function WizardAreaPage() {
       ]);
       setRules(ruleData);
       setMetadata(metaData);
-      setSense((current) => current || metaData.sensos?.[0]?.descricao || "");
+      setSense((current) => current || metaData.sensos?.find((item) => item.ativo)?.descricao || "");
     } catch (error) { setMessage({ type: "error", text: errorText(error) }); }
     finally { setBusy(false); }
-  };
+  }, [token]);
 
-  useEffect(() => { if (token && user && isFromCategory(user, "Admin")) load(); }, [token, user]);
+  useEffect(() => { if (token && user && isFromCategory(user, "Admin")) load(); }, [load, token, user]);
 
   const currentRules = useMemo(() => Array.from(rules.reduce((families, rule) => {
     const key = rule.codigoVersao || `rule-${rule.id}`;
@@ -163,6 +165,9 @@ export default function WizardAreaPage() {
       <div className="mb-6 flex overflow-x-auto border-b border-gray-200" role="tablist">
         <button onClick={() => setTab("rules")} className={`flex shrink-0 items-center gap-2 border-b-2 px-4 py-3 font-semibold ${tab === "rules" ? "border-primary text-primary" : "border-transparent text-gray-500"}`}><FaBolt /> Regras</button>
         <button onClick={() => setTab("categories")} className={`flex shrink-0 items-center gap-2 border-b-2 px-4 py-3 font-semibold ${tab === "categories" ? "border-primary text-primary" : "border-transparent text-gray-500"}`}><FaLayerGroup /> Categorias</button>
+        <button onClick={() => setTab("senses")} className={`flex shrink-0 items-center gap-2 border-b-2 px-4 py-3 font-semibold ${tab === "senses" ? "border-primary text-primary" : "border-transparent text-gray-500"}`}><FaShapes /> Sensos</button>
+        <button onClick={() => setTab("classes")} className={`flex shrink-0 items-center gap-2 border-b-2 px-4 py-3 font-semibold ${tab === "classes" ? "border-primary text-primary" : "border-transparent text-gray-500"}`}><FaGraduationCap /> Turmas</button>
+        <button onClick={() => setTab("years")} className={`flex shrink-0 items-center gap-2 border-b-2 px-4 py-3 font-semibold ${tab === "years" ? "border-primary text-primary" : "border-transparent text-gray-500"}`}><FaCalendarDays /> Anos letivos</button>
       </div>
 
       {busy ? <LoadingSpinner /> : tab === "rules" ? <>
@@ -172,7 +177,7 @@ export default function WizardAreaPage() {
         </section>
         <div className="mb-6 flex flex-col gap-3 border-b border-gray-200 sm:flex-row sm:items-end sm:justify-between">
           <div className="flex min-w-0 flex-1 gap-1 overflow-x-auto">
-            {metadata.sensos.map((item) => { const style = SENSE_TAB_STYLES[item.descricao] || { active: "border-primary bg-emerald-50 text-primary", idle: "text-gray-600 hover:bg-gray-100" }; return <button key={item.id} onClick={() => { setSense(item.descricao); setSearch(""); }} className={`whitespace-nowrap rounded-t-lg border-b-2 px-4 py-3 text-sm font-semibold ${sense === item.descricao ? style.active : `border-transparent ${style.idle}`}`}>{item.descricao} <span className="ml-1 text-xs">{currentRules.filter((r) => r.senso === item.descricao).length}</span></button>; })}
+            {metadata.sensos.filter((item) => item.ativo).map((item) => { const style = SENSE_TAB_STYLES[item.descricao] || { active: "border-primary bg-emerald-50 text-primary", idle: "text-gray-600 hover:bg-gray-100" }; return <button key={item.id} onClick={() => { setSense(item.descricao); setSearch(""); }} className={`whitespace-nowrap rounded-t-lg border-b-2 px-4 py-3 text-sm font-semibold ${sense === item.descricao ? style.active : `border-transparent ${style.idle}`}`}>{item.descricao} <span className="ml-1 text-xs">{currentRules.filter((r) => r.senso === item.descricao).length}</span></button>; })}
           </div>
           <button type="button" onClick={() => openRule(null, { sensoId: selectedSense?.id })} className="mb-2 inline-flex min-h-10 w-full shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-dark sm:w-auto"><FaPlus /> Nova regra em {sense}</button>
         </div>
@@ -186,7 +191,10 @@ export default function WizardAreaPage() {
             </div>{versionsOf(rule).length > 0 && <details className="group mt-2"><summary className="ml-11 inline-flex cursor-pointer list-none items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"><FaChevronDown className="text-[10px] transition-transform group-open:rotate-180" /> {versionsOf(rule).length} {versionsOf(rule).length === 1 ? "versão anterior" : "versões anteriores"}</summary><div className="ml-11 mt-1 space-y-1 border-l border-gray-200 pl-3">{versionsOf(rule).map((version) => <div key={version.id} className="flex flex-col gap-0.5 py-1.5 text-xs text-gray-500 sm:flex-row sm:items-center sm:justify-between"><span>v{version.versao} · {version.descricao}</span><span>{version.operacao === "SUM" ? "+" : "−"}{version.valorMinimo}{!version.fixo ? `–${version.valorMaximo}` : ""} pontos</span></div>)}</div></details>}
           </article>)}
         </div></div></div></section>; })}
-      </> : <Categories categories={metadata.categorias} sensos={metadata.sensos} openNew={(sensoId = "") => { setCategoryEditing(null); setCategoryForm({ ...EMPTY_CATEGORY, sensoId: String(sensoId) }); }} edit={(item) => { setCategoryEditing(item); setCategoryForm({ nome: item.nome, sensoId: String(item.senso?.id || ""), ativo: item.ativo }); }} remove={(category) => setPendingAction({ title: "Excluir categoria", description: `Excluir a categoria “${category.nome}”? Esta ação não poderá ser desfeita.`, confirmLabel: "Excluir", destructive: true, onConfirm: () => removeCategory(category) })} />}
+      </> : tab === "categories" ? <Categories categories={metadata.categorias} sensos={metadata.sensos} openNew={(sensoId = "") => { setCategoryEditing(null); setCategoryForm({ ...EMPTY_CATEGORY, sensoId: String(sensoId) }); }} edit={(item) => { setCategoryEditing(item); setCategoryForm({ nome: item.nome, sensoId: String(item.senso?.id || ""), ativo: item.ativo }); }} remove={(category) => setPendingAction({ title: "Excluir categoria", description: `Excluir a categoria “${category.nome}”? Esta ação não poderá ser desfeita.`, confirmLabel: "Excluir", destructive: true, onConfirm: () => removeCategory(category) })} />
+        : tab === "senses" ? <SenseManagement token={token} notify={notify} />
+        : tab === "classes" ? <ClassesManagement token={token} notify={notify} />
+        : <SchoolYearsManagement token={token} notify={notify} />}
     </div>
     {(editing !== null || (editing === null && form !== EMPTY_RULE && form.sensoId)) && <RuleDialog editing={editing} form={form} setForm={setForm} metadata={metadata} save={saveRule} close={() => { setEditing(null); setForm(EMPTY_RULE); }} />}
     {categoryForm !== EMPTY_CATEGORY && <CategoryDialog editing={categoryEditing} form={categoryForm} setForm={setCategoryForm} sensos={metadata.sensos} save={saveCategory} close={() => { setCategoryEditing(null); setCategoryForm(EMPTY_CATEGORY); }} />}
@@ -201,7 +209,7 @@ function Categories({ categories, sensos, openNew, edit, remove }) {
     if (lastA !== lastB) return lastA ? 1 : -1;
     return Number(b.ativo) - Number(a.ativo) || a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" });
   }) }));
-  return <div><div className="mb-5 flex justify-end"><button type="button" onClick={() => openNew()} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white sm:w-auto"><FaPlus /> Nova categoria</button></div><section className="space-y-5">{groupedBySense.map(({ senso, categories: senseCategories }) => <section key={senso.id} className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"><header className="flex items-center justify-between gap-3 border-b bg-gray-50 px-4 py-3"><div><h2 className="text-sm font-bold text-gray-900">{senso.descricao}</h2><p className="mt-0.5 text-xs text-gray-500">{senseCategories.length} {senseCategories.length === 1 ? "categoria" : "categorias"}</p></div><button type="button" onClick={() => openNew(senso.id)} className="inline-flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-primary hover:bg-emerald-50"><FaPlus /> Adicionar</button></header>{senseCategories.length === 0 ? <p className="p-5 text-sm text-gray-500">Nenhuma categoria neste senso.</p> : senseCategories.map((item) => <article key={`${item.senso.id}-${item.nome}`} className={`flex flex-col items-start justify-between gap-3 border-b border-gray-100 p-4 last:border-0 sm:flex-row sm:items-center ${!item.ativo ? "bg-gray-50" : ""}`}><h3 className="min-w-0 break-words text-sm font-semibold text-gray-900">{item.nome}</h3><div className="flex flex-wrap items-center gap-2"><span className={`rounded-full px-2 py-1 text-xs font-bold ${item.ativo ? "bg-emerald-100 text-emerald-700" : "bg-gray-200 text-gray-600"}`}>{item.ativo ? "Ativa" : "Inativa"}</span><button onClick={() => edit(item)} className="grid h-10 w-10 place-items-center rounded-lg border" aria-label="Editar"><FaPen /></button><button onClick={() => remove(item)} className="grid h-10 w-10 place-items-center rounded-lg border text-red-700" aria-label="Excluir"><FaTrashCan /></button></div></article>)}</section>)}</section></div>;
+  return <div><div className="mb-5 flex justify-end"><button type="button" onClick={() => openNew()} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white sm:w-auto"><FaPlus /> Nova categoria</button></div><section className="space-y-5">{groupedBySense.map(({ senso, categories: senseCategories }) => <section key={senso.id} className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"><header className="flex items-center justify-between gap-3 border-b bg-gray-50 px-4 py-3"><div><h2 className="text-sm font-bold text-gray-900">{senso.descricao}</h2><p className="mt-0.5 text-xs text-gray-500">{senseCategories.length} {senseCategories.length === 1 ? "categoria" : "categorias"}</p></div>{senso.ativo && <button type="button" onClick={() => openNew(senso.id)} className="inline-flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-primary hover:bg-emerald-50"><FaPlus /> Adicionar</button>}</header>{senseCategories.length === 0 ? <p className="p-5 text-sm text-gray-500">Nenhuma categoria neste senso.</p> : senseCategories.map((item) => <article key={`${item.senso.id}-${item.nome}`} className={`flex flex-col items-start justify-between gap-3 border-b border-gray-100 p-4 last:border-0 sm:flex-row sm:items-center ${!item.ativo ? "bg-gray-50" : ""}`}><h3 className="min-w-0 break-words text-sm font-semibold text-gray-900">{item.nome}</h3><div className="flex flex-wrap items-center gap-2"><span className={`rounded-full px-2 py-1 text-xs font-bold ${item.ativo ? "bg-emerald-100 text-emerald-700" : "bg-gray-200 text-gray-600"}`}>{item.ativo ? "Ativa" : "Inativa"}</span><button onClick={() => edit(item)} className="grid h-10 w-10 place-items-center rounded-lg border" aria-label="Editar"><FaPen /></button><button onClick={() => remove(item)} className="grid h-10 w-10 place-items-center rounded-lg border text-red-700" aria-label="Excluir"><FaTrashCan /></button></div></article>)}</section>)}</section></div>;
 }
 
 function useModalAccessibility(close) {
@@ -232,7 +240,7 @@ function useModalAccessibility(close) {
 
 function CategoryDialog({ editing, form, setForm, sensos, save, close }) {
   const dialogRef = useModalAccessibility(close);
-  return <div className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto bg-black/50 p-3"><form ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="category-dialog-title" onSubmit={save} className="w-full max-w-lg rounded-2xl bg-white shadow-2xl"><header className="flex items-start justify-between gap-3 border-b p-4 sm:p-5"><h2 id="category-dialog-title" className="text-xl font-black">{editing ? "Editar categoria" : "Nova categoria"}</h2><button type="button" onClick={close} className="text-2xl" aria-label="Fechar">×</button></header><div className="p-4 sm:p-5"><label className="block text-sm font-semibold">Nome<input autoFocus value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} className="mt-2 min-h-11 w-full rounded-lg border px-3 text-sm" required /></label><label className="mt-4 block text-sm font-semibold">Senso<select value={form.sensoId} onChange={(e) => setForm({ ...form, sensoId: e.target.value })} className="mt-2 min-h-11 w-full rounded-lg border bg-white px-3 text-sm" required><option value="">Selecione</option>{sensos.map((senso) => <option key={senso.id} value={senso.id}>{senso.descricao}</option>)}</select></label><label className="mt-4 flex items-center gap-2 text-sm"><input type="checkbox" checked={form.ativo} onChange={(e) => setForm({ ...form, ativo: e.target.checked })} /> Categoria ativa</label></div><footer className="flex flex-col-reverse gap-3 border-t p-4 sm:flex-row sm:justify-end sm:p-5"><button type="button" onClick={close} className="min-h-11 rounded-lg border px-5 py-2.5 font-semibold">Cancelar</button><button className="min-h-11 rounded-lg bg-primary px-5 py-2.5 font-bold text-white">Salvar categoria</button></footer></form></div>;
+  return <div className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto bg-black/50 p-3"><form ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="category-dialog-title" onSubmit={save} className="w-full max-w-lg rounded-2xl bg-white shadow-2xl"><header className="flex items-start justify-between gap-3 border-b p-4 sm:p-5"><h2 id="category-dialog-title" className="text-xl font-black">{editing ? "Editar categoria" : "Nova categoria"}</h2><button type="button" onClick={close} className="text-2xl" aria-label="Fechar">×</button></header><div className="p-4 sm:p-5"><label className="block text-sm font-semibold">Nome<input autoFocus value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} className="mt-2 min-h-11 w-full rounded-lg border px-3 text-sm" required /></label><label className="mt-4 block text-sm font-semibold">Senso<select value={form.sensoId} onChange={(e) => setForm({ ...form, sensoId: e.target.value })} className="mt-2 min-h-11 w-full rounded-lg border bg-white px-3 text-sm" required><option value="">Selecione</option>{sensos.filter((senso) => senso.ativo).map((senso) => <option key={senso.id} value={senso.id}>{senso.descricao}</option>)}</select></label><label className="mt-4 flex items-center gap-2 text-sm"><input type="checkbox" checked={form.ativo} onChange={(e) => setForm({ ...form, ativo: e.target.checked })} /> Categoria ativa</label></div><footer className="flex flex-col-reverse gap-3 border-t p-4 sm:flex-row sm:justify-end sm:p-5"><button type="button" onClick={close} className="min-h-11 rounded-lg border px-5 py-2.5 font-semibold">Cancelar</button><button className="min-h-11 rounded-lg bg-primary px-5 py-2.5 font-bold text-white">Salvar categoria</button></footer></form></div>;
 }
 
 function RuleDialog({ editing, form, setForm, metadata, save, close }) {
@@ -254,7 +262,7 @@ function RuleDialog({ editing, form, setForm, metadata, save, close }) {
     : [...form.roleIds, roleId]);
   return <div className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-black/50 p-3 sm:py-10"><form ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="rule-dialog-title" onSubmit={save} className="w-full max-w-3xl rounded-2xl bg-white shadow-2xl"><header className="flex items-start justify-between gap-3 border-b p-4 sm:p-5"><div className="min-w-0"><h2 id="rule-dialog-title" className="text-xl font-black">{editing ? "Editar regra" : "Criar nova regra"}</h2>{editing && <p className="mt-1 text-sm text-gray-500">Se houver lançamentos, uma nova versão será criada para preservar o histórico.</p>}</div><button type="button" onClick={close} className="shrink-0 text-2xl" aria-label="Fechar">×</button></header><div className="grid gap-4 p-4 sm:grid-cols-2 sm:p-5">
     <label className="sm:col-span-2 text-sm font-semibold">Descrição<input value={form.descricao} onChange={(e) => set("descricao", e.target.value)} className="mt-2 min-h-11 w-full rounded-lg border px-3 text-sm" required /></label>
-    <label className="text-sm font-semibold">Senso<select value={form.sensoId} onChange={(e) => setForm({ ...form, sensoId: e.target.value, categoriaId: "", categoria: "" })} className="mt-2 min-h-11 w-full rounded-lg border bg-white px-3 text-sm" required>{metadata.sensos.map((item) => <option key={item.id} value={item.id}>{item.descricao}</option>)}</select></label>
+    <label className="text-sm font-semibold">Senso<select value={form.sensoId} onChange={(e) => setForm({ ...form, sensoId: e.target.value, categoriaId: "", categoria: "" })} className="mt-2 min-h-11 w-full rounded-lg border bg-white px-3 text-sm" required>{metadata.sensos.filter((item) => item.ativo).map((item) => <option key={item.id} value={item.id}>{item.descricao}</option>)}</select></label>
     <CategoryPicker categories={activeCategories} value={form.categoria} select={(category) => setForm({ ...form, categoriaId: String(category.id), categoria: category.nome })} clear={() => setForm({ ...form, categoriaId: "", categoria: "" })} />
     <label className="sm:col-span-2 text-sm font-semibold">Tipo de regra<select value={form.tipoRegraId} onChange={(e) => set("tipoRegraId", e.target.value)} className="mt-2 min-h-11 w-full rounded-lg border bg-white px-3 text-sm" required><option value="">Selecione</option>{fixedTypes.length > 0 && <optgroup label="Valor fixo">{fixedTypes.map((item) => <option key={item.id} value={item.id}>{item.descricao}</option>)}</optgroup>}{variableTypes.length > 0 && <optgroup label="Valor variável">{variableTypes.map((item) => <option key={item.id} value={item.id}>{item.descricao}</option>)}</optgroup>}</select><span className="mt-1 block text-xs font-normal text-gray-500">{type?.fixo ? "Aplica sempre a mesma pontuação." : type ? "Permite definir um intervalo de pontos." : "Tipos organizados pela forma de cálculo."}</span></label>
     <label className="text-sm font-semibold">Operação<select value={form.operacao} onChange={(e) => set("operacao", e.target.value)} className="mt-2 min-h-11 w-full rounded-lg border bg-white px-3"><option value="SUM">Adicionar pontos</option><option value="SUB">Subtrair pontos</option></select></label>
