@@ -189,20 +189,22 @@ export function ClassesManagement({ token, notify }) {
         return <article key={year.id} className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
           <header className="flex items-center gap-2 bg-gray-50 p-3 sm:p-4">
             <button type="button" aria-expanded={isOpen} onClick={() => setExpanded((current) => ({ ...current, [year.id]: !current[year.id] }))} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-              <FaChevronDown className={`shrink-0 text-gray-500 transition-transform ${isOpen ? "" : "-rotate-90"}`} />
+              <FaChevronDown className={`shrink-0 text-gray-500 transition-transform duration-300 ease-in-out motion-reduce:transition-none ${isOpen ? "" : "-rotate-90"}`} />
               <span className="font-black text-gray-900">{year.ano_letivo}</span>
               <StatusBadge active={activeYear} activeText="Aberto" inactiveText="Fechado" />
               <span className="ml-auto text-xs text-gray-500">{yearClasses.length} {yearClasses.length === 1 ? "turma" : "turmas"}</span>
             </button>
             {activeYear && <IconButton label={`Adicionar turma em ${year.ano_letivo}`} onClick={() => openForm(null, year.id)}><FaPlus /></IconButton>}
           </header>
-          {isOpen && <div>
-            {yearClasses.length === 0 ? <p className="p-5 text-sm text-gray-500">Nenhuma turma neste ano letivo.</p> :
-              yearClasses.map((schoolClass) => <div key={schoolClass.id} className="flex flex-col justify-between gap-3 border-t border-gray-100 p-4 sm:flex-row sm:items-center">
-                <div><h3 className="font-semibold text-gray-900">{schoolClass.nome}</h3><p className="mt-1 text-sm text-gray-500">{schoolClass.descricao || "Sem descrição"} · {TURN_NAMES[schoolClass.turno] || "Turno não informado"}</p></div>
-                {activeYear && <IconButton label={`Editar ${schoolClass.nome}`} onClick={() => openForm(schoolClass)}><FaPen /></IconButton>}
-              </div>)}
-          </div>}
+          <div className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out motion-reduce:transition-none ${isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
+            <div className="min-h-0 overflow-hidden">
+              {yearClasses.length === 0 ? <p className="p-5 text-sm text-gray-500">Nenhuma turma neste ano letivo.</p> :
+                yearClasses.map((schoolClass) => <div key={schoolClass.id} className="flex flex-col justify-between gap-3 border-t border-gray-100 p-4 sm:flex-row sm:items-center">
+                  <div><h3 className="font-semibold text-gray-900">{schoolClass.nome}</h3><p className="mt-1 text-sm text-gray-500">{schoolClass.descricao || "Sem descrição"} · {TURN_NAMES[schoolClass.turno] || "Turno não informado"}</p></div>
+                  {activeYear && <IconButton label={`Editar ${schoolClass.nome}`} onClick={() => openForm(schoolClass)}><FaPen /></IconButton>}
+                </div>)}
+            </div>
+          </div>
         </article>;
       })}
     </section>
