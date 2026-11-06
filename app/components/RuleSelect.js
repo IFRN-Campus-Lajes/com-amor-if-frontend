@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { FaCircleMinus, FaCirclePlus, FaRocket } from "react-icons/fa6";
+import { FaCircleMinus, FaCirclePlus, FaRocket, FaXmark } from "react-icons/fa6";
 
 export const UNGROUPED_RULES_LABEL = "Outras regras";
 export const isTurboRule = (rule) => Number(rule?.valorMinimo) >= 30;
@@ -119,6 +119,7 @@ const RuleSelect = ({ rules = [], selectedRuleId, onChange }) => {
   const selectedIsTurbo = isTurboRule(selectedRule);
   const selectedHasIcon = selectedOperation || selectedIsTurbo;
   const selectedInputPadding = selectedOperation && selectedIsTurbo ? "pl-16" : "pl-10";
+  const canClear = Boolean(selectedRule || searchTerm);
 
   useEffect(() => {
     if (selectedRule) {
@@ -163,6 +164,15 @@ const RuleSelect = ({ rules = [], selectedRuleId, onChange }) => {
     onChange(String(rule.id));
     setSearchTerm(getRuleDisplayDescription(rule.descricao));
     setIsOpen(false);
+  };
+
+  const handleClear = () => {
+    editingRef.current = false;
+    setSearchTerm("");
+    setActiveIndex(0);
+    setIsOpen(true);
+    onChange("");
+    inputRef.current?.focus();
   };
 
   const handleKeyDown = (event) => {
@@ -218,7 +228,7 @@ const RuleSelect = ({ rules = [], selectedRuleId, onChange }) => {
         aria-label="Buscar regra pela descrição ou categoria"
         autoComplete="off"
         autoCorrect="off"
-        className={`min-h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/20 ${selectedHasIcon ? selectedInputPadding : ""}`}
+        className={`min-h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/20 ${selectedHasIcon ? selectedInputPadding : ""} ${canClear ? "pr-12" : ""}`}
         onChange={(event) => {
           editingRef.current = true;
           setSearchTerm(event.target.value);
@@ -234,10 +244,22 @@ const RuleSelect = ({ rules = [], selectedRuleId, onChange }) => {
         placeholder="Digite a descrição ou categoria"
         role="combobox"
         spellCheck={false}
-        type="search"
+        type="text"
         value={searchTerm}
         required
       />
+
+      {canClear && (
+        <button
+          type="button"
+          aria-label="Limpar regra selecionada"
+          className="absolute right-1 top-[22px] z-10 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-md text-gray-500 transition hover:bg-gray-100 hover:text-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={handleClear}
+        >
+          <FaXmark className="h-5 w-5" aria-hidden="true" />
+        </button>
+      )}
 
       {isOpen && (
         <div
