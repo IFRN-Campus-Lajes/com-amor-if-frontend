@@ -114,24 +114,6 @@ const MobileNavbar = ({ isLoggedIn, isMenuOpen, toggleMenu }) => {
                     <li>
                       <a
                         onClick={handleLinkClick}
-                        href="/groups"
-                        className="block py-2 text-black hover:bg-gray-100 px-4 rounded-lg transition duration-200 ease-in-out"
-                      >
-                        Turmas
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        onClick={handleLinkClick}
-                        href="/years"
-                        className="block py-2 text-black hover:bg-gray-100 px-4 rounded-lg transition duration-200 ease-in-out"
-                      >
-                        Anos Letivos
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        onClick={handleLinkClick}
                         href="/validate"
                         className="block py-2 text-black hover:bg-gray-100 px-4 rounded-lg transition duration-200 ease-in-out"
                       >
