@@ -56,22 +56,6 @@ const Dropdown = ({ username }) => {
               </li>
               <li>
                 <a
-                  href="/groups"
-                  className="block py-1 px-4 hover:bg-gray-200 transition duration-200 ease-in-out"
-                >
-                  Turmas
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/years"
-                  className="block py-1 px-4 hover:bg-gray-200 transition duration-200 ease-in-out"
-                >
-                  Anos
-                </a>
-              </li>
-              <li>
-                <a
                   href="/validate"
                   className="block py-1 px-4 hover:bg-gray-200 transition duration-200 ease-in-out"
                 >
