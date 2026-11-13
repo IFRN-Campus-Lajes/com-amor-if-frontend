@@ -57,7 +57,7 @@ const Dropdown = ({ username }) => {
               <li>
                 <a
                   href="/validate"
-                  className="block py-1 px-4 hover:bg-gray-200 transition duration-200 ease-in-out"
+                  className="block rounded-md py-1 px-4 hover:bg-gray-200 transition duration-200 ease-in-out"
                 >
                   Validar Pontos
                 </a>
@@ -70,7 +70,7 @@ const Dropdown = ({ username }) => {
               <li>
                 <a
                   href="/points"
-                  className="block py-1 px-4 hover:bg-gray-200 transition duration-200 ease-in-out"
+                  className="block rounded-md py-1 px-4 hover:bg-gray-200 transition duration-200 ease-in-out"
                 >
                   Lançar Pontos
                 </a>
@@ -81,7 +81,7 @@ const Dropdown = ({ username }) => {
             <li>
               <a
                 href="/olympiads"
-                className="block py-1 px-4 hover:bg-gray-200 transition duration-200 ease-in-out"
+                className="block rounded-md py-1 px-4 hover:bg-gray-200 transition duration-200 ease-in-out"
               >
                 Olimpíadas
               </a>
@@ -91,7 +91,7 @@ const Dropdown = ({ username }) => {
             <a
               href="#"
               onClick={handleLogout}
-              className="block py-1 px-4 hover:bg-gray-200 transition duration-200 ease-in-out"
+              className="block rounded-md py-1 px-4 hover:bg-gray-200 transition duration-200 ease-in-out"
             >
               Logout
             </a>

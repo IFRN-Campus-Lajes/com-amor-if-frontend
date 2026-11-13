@@ -104,6 +104,7 @@ export default function WizardAreaPage() {
   if (!user || !isFromCategory(user, "Admin")) return <NotAuthorized />;
 
   const openRule = (rule = null, context = {}) => {
+    if (rule?.automatico) return;
     const defaultSenseId = context.sensoId || selectedSense?.id || metadata.sensos?.[0]?.id || "";
     const defaultCategory = context.categoria || "";
     const defaultCategoryId = context.categoria
@@ -116,7 +117,7 @@ export default function WizardAreaPage() {
       operacao: rule.operacao, valorMinimo: rule.valorMinimo, valorMaximo: rule.valorMaximo,
       sensoId: String(rule.sensoId), tipoRegraId: String(rule.tipoRegraId), roleIds: rule.roleIds,
       ativo: rule.ativo,
-    } : { ...EMPTY_RULE, sensoId: String(defaultSenseId), tipoRegraId: metadata.tipos?.[0]?.id || "", categoriaId: String(defaultCategoryId), categoria: defaultCategory, roleIds: administratorRoleId ? [administratorRoleId] : [] });
+    } : { ...EMPTY_RULE, sensoId: String(defaultSenseId), tipoRegraId: metadata.tipos?.find((type) => !type.automatico)?.id || "", categoriaId: String(defaultCategoryId), categoria: defaultCategory, roleIds: administratorRoleId ? [administratorRoleId] : [] });
   };
 
   const saveRule = async (event) => {
@@ -159,7 +160,7 @@ export default function WizardAreaPage() {
     <div className="container mx-auto max-w-6xl px-4">
       {message && <MessageBox message={message.text} color={message.type === "error" ? "detail-minor" : "lime-400"} onClose={() => setMessage(null)} />}
       <header className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-        <div className="flex min-w-0 items-center gap-3"><Image src="/mascots/modo-deus-wizard.png" alt="Mago da Área do Mago" width={80} height={80} priority className="wizard-mascot h-14 w-14 shrink-0 object-contain sm:h-20 sm:w-20" /><div className="min-w-0"><h1 className="flex items-center gap-2 text-2xl font-black text-gray-900 sm:gap-3 sm:text-3xl"><FaCrown className="shrink-0 text-accent" /> Área do Mago</h1><p className="mt-2 text-sm text-gray-600 sm:text-base">Defina as regras que movimentam a Corrida das Turmas.</p></div></div>
+        <div className="flex min-w-0 items-center gap-3"><Image src="/mascots/modo-deus-wizard.png" alt="Mago da Área do Mago" width={80} height={80} priority className="wizard-mascot h-14 w-14 shrink-0 object-contain sm:h-20 sm:w-20" /><div className="min-w-0"><h1 className="flex items-center gap-2 text-2xl font-black text-gray-900 sm:gap-3 sm:text-3xl"><FaCrown className="shrink-0 text-accent" /> Área do Mago</h1><p className="mt-2 text-sm text-gray-600 sm:text-base">Defina as regras que movimentam a Corrida das Turmas.</p><a href="/wizard-area/automatic-rules" className="mt-2 inline-block text-sm font-semibold text-amber-800 underline hover:text-amber-950">Auditoria das regras automáticas</a></div></div>
       </header>
 
       <div className="mb-6 flex overflow-x-auto border-b border-gray-200" role="tablist">
@@ -187,7 +188,7 @@ export default function WizardAreaPage() {
             <span className={`grid h-8 w-8 place-items-center rounded-full ${rule.operacao === "SUM" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>{rule.operacao === "SUM" ? <FaCirclePlus /> : <FaCircleMinus />}</span>
             <div className="min-w-0"><h3 className="break-words font-semibold text-gray-900">{rule.descricao}</h3><p className="mt-1 break-words text-xs text-gray-500">{rule.fixo ? `${rule.valorMinimo} pontos` : `${rule.valorMinimo}–${rule.valorMaximo} pontos`} · {rule.temAluno ? "por aluno" : rule.porTurno ? "por turno" : "por turma"} · {FREQUENCIES[rule.frequencia] || "Configurável"} · v{rule.versao || 1}</p></div>
             <span className={`w-fit rounded-full px-2.5 py-1 text-xs font-bold ${rule.ativo ? "bg-emerald-100 text-emerald-700" : "bg-gray-200 text-gray-600"}`}>{rule.ativo ? "Ativa" : "Inativa"}</span>
-            <div className="flex flex-wrap gap-2"><button onClick={() => openRule(rule)} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-gray-200 px-3 text-sm font-semibold hover:bg-gray-50"><FaPen /> Editar</button><button onClick={() => setPendingAction({ title: rule.ativo ? "Desativar regra" : "Ativar regra", description: `${rule.ativo ? "Desativar" : "Ativar"} “${rule.descricao}”? O histórico de pontuações será preservado.`, confirmLabel: rule.ativo ? "Desativar" : "Ativar", onConfirm: () => toggleRule(rule) })} aria-label={rule.ativo ? "Desativar" : "Ativar"} className="grid min-h-10 min-w-10 place-items-center rounded-lg border border-gray-200 hover:bg-gray-50"><FaPowerOff /></button></div>
+            <div className="flex flex-wrap gap-2">{rule.automatico ? <span className="text-xs text-gray-500">Automática · Somente consulta</span> : <><button onClick={() => openRule(rule)} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-gray-200 px-3 text-sm font-semibold hover:bg-gray-50"><FaPen /> Editar</button><button onClick={() => setPendingAction({ title: rule.ativo ? "Desativar regra" : "Ativar regra", description: `${rule.ativo ? "Desativar" : "Ativar"} “${rule.descricao}”? O histórico de pontuações será preservado.`, confirmLabel: rule.ativo ? "Desativar" : "Ativar", onConfirm: () => toggleRule(rule) })} aria-label={rule.ativo ? "Desativar" : "Ativar"} className="grid min-h-10 min-w-10 place-items-center rounded-lg border border-gray-200 hover:bg-gray-50"><FaPowerOff /></button></>}</div>
             </div>{versionsOf(rule).length > 0 && <details className="group mt-2"><summary className="ml-11 inline-flex cursor-pointer list-none items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"><FaChevronDown className="text-[10px] transition-transform group-open:rotate-180" /> {versionsOf(rule).length} {versionsOf(rule).length === 1 ? "versão anterior" : "versões anteriores"}</summary><div className="ml-11 mt-1 space-y-1 border-l border-gray-200 pl-3">{versionsOf(rule).map((version) => <div key={version.id} className="flex flex-col gap-0.5 py-1.5 text-xs text-gray-500 sm:flex-row sm:items-center sm:justify-between"><span>v{version.versao} · {version.descricao}</span><span>{version.operacao === "SUM" ? "+" : "−"}{version.valorMinimo}{!version.fixo ? `–${version.valorMaximo}` : ""} pontos</span></div>)}</div></details>}
           </article>)}
         </div></div></div></section>; })}
@@ -255,8 +256,8 @@ function RuleDialog({ editing, form, setForm, metadata, save, close }) {
       if (lastA !== lastB) return lastA ? 1 : -1;
       return a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" });
     });
-  const fixedTypes = metadata.tipos.filter((item) => item.fixo);
-  const variableTypes = metadata.tipos.filter((item) => !item.fixo);
+  const fixedTypes = metadata.tipos.filter((item) => item.fixo && !item.automatico);
+  const variableTypes = metadata.tipos.filter((item) => !item.fixo && !item.automatico);
   const toggleRole = (roleId) => set("roleIds", form.roleIds.includes(roleId)
     ? form.roleIds.filter((id) => id !== roleId)
     : [...form.roleIds, roleId]);
