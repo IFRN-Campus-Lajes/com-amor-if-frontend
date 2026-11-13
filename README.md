@@ -36,7 +36,7 @@ consulta de resultados. Entre os destaques estão:
 Crie um arquivo `.env` na raiz do projeto:
 
 ```env
-NEXT_PUBLIC_REACT_APP_API_URL=http://localhost:8080/
+NEXT_PUBLIC_REACT_APP_API_URL=http://localhost:8080/api/
 ```
 
 O endereço deve terminar com `/`, pois as rotas da API são concatenadas a
@@ -65,6 +65,23 @@ npm run build
 docker build -t com-amor-if-frontend .
 docker run --rm -p 3000:3000 --env-file .env com-amor-if-frontend
 ```
+
+## Regras automáticas e auditoria
+
+Integração da [issue #5 do backend](https://github.com/IFRN-Campus-Lajes/com-amor-if-backend/issues/5),
+independente da issue #5 deste repositório (sensos e consolidação da Área do Mago).
+
+Administradores acessam a auditoria pelo link abaixo da descrição da Área do
+Mago. A página permite consultar execuções e consolidar manualmente os bônus de
+limpeza e ordenação por bimestre. As regras automáticas aparecem no catálogo
+somente para consulta e não podem ser criadas ou editadas pela interface.
+
+O histórico usa cartões abaixo de 768 px e tabela nas telas maiores. Formulário,
+paginação, menu mobile e navegação foram validados em larguras de 320, 375, 390,
+768 e 1024 px, sem transbordamento horizontal da página.
+
+O backend correspondente deve disponibilizar `/api/admin/regras-automaticas`.
+A configuração Docker de homologação local está em `ops/homologacao` no backend.
 
 ## Projetos relacionados
 
