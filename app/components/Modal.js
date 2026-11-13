@@ -2,7 +2,7 @@
 
 import React from "react";
 
-const Modal = ({ title, children, isOpen, onClose, onSave }) => {
+const Modal = ({ title, children, isOpen, onClose, onSave, isSaving = false }) => {
   if (!isOpen) return null;
 
   return (
@@ -15,12 +15,14 @@ const Modal = ({ title, children, isOpen, onClose, onSave }) => {
         <div className="flex justify-end px-4 py-2 border-t">
           <button
             onClick={onClose}
+            disabled={isSaving}
             className="px-4 py-2 mr-2 text-sm font-medium text-gray-700 bg-gray-200 rounded hover:bg-gray-300"
           >
             Cancelar
           </button>
           <button
             onClick={onSave}
+            disabled={isSaving}
             className="px-4 py-2 text-sm font-medium text-white bg-green-500 rounded hover:bg-green-600"
           >
             Confirmar

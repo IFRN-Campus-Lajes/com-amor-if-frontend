@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Tab from "../components/Tab";
 import Table from "../components/Table";
 import MessageBox from "../components/MessageBox";
@@ -8,7 +8,7 @@ import NotAuthorized from "../components/NotAuthorized";
 import LoadingSpinner from "../components/LoadingSpinner";
 import Modal from "../components/Modal";
 import PointSchoolClassCell from "../components/PointSchoolClassCell";
-import { fetchPrivateData, postPrivateData } from "../../utils/api";
+import { useValidationPoints } from "./useValidationPoints";
 import { useAuth } from "../../providers/AuthProvider";
 import { format } from "date-fns";
 import NoOpenSchoolYearNotice from "../components/NoOpenSchoolYearNotice";
@@ -49,8 +49,6 @@ const PointsValidationPage = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deletingPoint, setDeletingPoint] = useState(null);
   const [activeTab, setActiveTab] = useState(tabs[0].label);
-  const [messages, setMessages] = useState({ error: null, success: null });
-  const [pointsData, setPointsData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const token = getToken();
@@ -60,29 +58,61 @@ const PointsValidationPage = () => {
     error: schoolYearError,
   } = useOpenSchoolYear(token, Boolean(user));
 
-  const fetchPoints = async (endpoint) => {
-    try {
-      if (user) {
-        const data = await fetchPrivateData(endpoint, token);
-        setPointsData(data);
-      }
-    } catch (error) {
-      setMessages({
-        error: "Erro ao carregar dados: " + error?.response?.data?.errors[0],
-      });
-    }
-  };
-
-  useEffect(() => {
-    if (user && hasOpenSchoolYear) {
-      const defaultTab = tabs.find((tab) => tab.label === activeTab);
-      if (defaultTab) fetchPoints(defaultTab.endpoint);
-    } else if (!hasOpenSchoolYear) {
-      setPointsData([]);
-    }
-  }, [activeTab, token, user, hasOpenSchoolYear]);
+  const endpoint = tabs.find(tab => tab.label === activeTab).endpoint;
+  const { points: pointsData, isLoading: isPointsLoading, isMutating,
+    messages, dismissMessage, mutate } = useValidationPoints({
+      endpoint, token, enabled: Boolean(user) && hasOpenSchoolYear && !isLoggingOut,
+    });
 
   const groupedPoints = groupCollectivePoints(pointsData);
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setCurrentPage(1);
+  };
+
+  const handleDelete = (pontuacao) => {
+    setDeletingPoint(pontuacao);
+    setDeleteModalOpen(true);
+  };
+
+  const pointIdentity = point => ({
+    id_turma: point.id_turma ?? point.turma?.id ?? point.idTurma,
+    contador: point.contador,
+  });
+
+  const changePoint = async (action, point) => {
+    const options = {
+      delete: { endpoint: "pontuacao/deletarPontuacao", errorPrefix: "Erro ao deletar pontuação",
+        success: point.collective ? "Lançamento coletivo deletado de todas as turmas" : "Pontuação deletada com sucesso" },
+      apply: { endpoint: "manager/aprovar", errorPrefix: "Erro ao aplicar pontuação",
+        success: point.collective ? "Lançamento coletivo aplicado a todas as turmas" : "Pontuação aplicada com sucesso" },
+      annul: { endpoint: "manager/cancelar", errorPrefix: "Erro ao anular pontuação",
+        success: point.collective ? "Lançamento coletivo anulado em todas as turmas" : "Pontuação anulada com sucesso" },
+    };
+    const changed = await mutate({ ...options[action], data: pointIdentity(point) });
+    if (changed && action === "delete") {
+      setDeleteModalOpen(false);
+      setDeletingPoint(null);
+    }
+  };
+  const deletePoints = () => changePoint("delete", deletingPoint);
+  const handleApply = point => changePoint("apply", point);
+  const handleAnnul = point => changePoint("annul", point);
+  const handleApplyAll = () => mutate({
+    endpoint: "manager/aprovarTodas", data: groupedPoints.map(pointIdentity),
+    success: "Pontuações aplicadas com sucesso", errorPrefix: "Erro ao aplicar pontuação",
+  });
+
+  const onPageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const filteredPoints = groupedPoints.filter((point) =>
+    getPointSchoolClassNames(point).some((name) =>
+      name.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  );
 
   if (isLoading || isLoggingOut || isSchoolYearLoading)
     return <LoadingSpinner />;
@@ -95,150 +125,25 @@ const PointsValidationPage = () => {
     switch (tab) {
       case "Pendentes":
         return [
-          { label: "Deletar", color: "bg-red-500", onClick: handleDelete },
-          { label: "Aplicar", color: "bg-green-500", onClick: handleApply },
-          { label: "Anular", color: "bg-yellow-500", onClick: handleAnnul },
+          { label: "Deletar", color: "bg-red-500", onClick: handleDelete, disabled: isMutating || isPointsLoading },
+          { label: "Aplicar", color: "bg-green-500", onClick: handleApply, disabled: isMutating || isPointsLoading },
+          { label: "Anular", color: "bg-yellow-500", onClick: handleAnnul, disabled: isMutating || isPointsLoading },
         ];
       case "Aplicados":
         return [
-          { label: "Anular", color: "bg-yellow-500", onClick: handleAnnul },
+          { label: "Anular", color: "bg-yellow-500", onClick: handleAnnul, disabled: isMutating || isPointsLoading },
         ];
       case "Anulados":
         return [
-          { label: "Aplicar", color: "bg-green-500", onClick: handleApply },
+          { label: "Aplicar", color: "bg-green-500", onClick: handleApply, disabled: isMutating || isPointsLoading },
         ];
       default:
         return [];
     }
   };
 
-  const handleTabChange = (tab) => {
-    setActiveTab(tab);
-    setCurrentPage(1);
-  };
-
-  const handleDelete = (pontuacao) => {
-    setDeletingPoint(pontuacao);
-    setDeleteModalOpen(true);
-  };
-
-  const deletePoints = async () => {
-    if (!token)
-      return setMessages({ error: "Token de autenticação não encontrado" });
-
-    const dataToSend = {
-      id_turma: deletingPoint.id_turma,
-      contador: deletingPoint.contador,
-    };
-
-    try {
-      await postPrivateData("pontuacao/deletarPontuacao", dataToSend, token);
-      setMessages({
-        success: deletingPoint.collective
-          ? "Lançamento coletivo deletado de todas as turmas"
-          : "Pontuação deletada com sucesso",
-      });
-
-      fetchPoints(tabs.find((tab) => tab.label === activeTab).endpoint);
-      setDeleteModalOpen(false);
-      setDeletingPoint(null);
-    } catch (error) {
-      setMessages({
-        error: "Erro ao deletar pontuacao: " + error?.response?.data?.errors[0],
-      });
-    }
-  };
-
-  const handleApplyAll = async () => {
-    if (!token)
-      return setMessages({ error: "Token de autenticação não encontrado" });
-
-    const dataToSend = groupedPoints.map((point) => ({
-      contador: point.contador,
-      id_turma: point.turma?.id || point.idTurma,
-    }));
-
-    try {
-      await postPrivateData("manager/aprovarTodas", dataToSend, token);
-      setMessages({ success: "Pontuações aplicadas com sucesso" });
-
-      //console.log(tabs.find((tab) => tab.label === activeTab).endpoint);
-
-      fetchPoints(tabs.find((tab) => tab.label === activeTab).endpoint);
-      setDeleteModalOpen(false);
-      setDeletingPoint(null);
-    } catch (error) {
-      setMessages({
-        error: "Erro ao aplicar pontuacao: " + error?.response?.data?.errors[0],
-      });
-    }
-  };
-
-  const handleApply = async (point) => {
-    if (!token)
-      return setMessages({ error: "Token de autenticação não encontrado" });
-
-    const dataToSend = {
-      id_turma: point.id_turma,
-      contador: point.contador,
-    };
-
-    try {
-      await postPrivateData("manager/aprovar", dataToSend, token);
-      setMessages({
-        success: point.collective
-          ? "Lançamento coletivo aplicado a todas as turmas"
-          : "Pontuação aplicada com sucesso",
-      });
-
-      //console.log(tabs.find((tab) => tab.label === activeTab).endpoint);
-
-      fetchPoints(tabs.find((tab) => tab.label === activeTab).endpoint);
-      setDeleteModalOpen(false);
-      setDeletingPoint(null);
-    } catch (error) {
-      setMessages({
-        error: "Erro ao aplicar pontuacao: " + error?.response?.data?.errors[0],
-      });
-    }
-  };
-
-  const handleAnnul = async (point) => {
-    if (!token)
-      return setMessages({ error: "Token de autenticação não encontrado" });
-
-    const dataToSend = {
-      id_turma: point.id_turma,
-      contador: point.contador,
-    };
-
-    try {
-      await postPrivateData("manager/cancelar", dataToSend, token);
-      setMessages({
-        success: point.collective
-          ? "Lançamento coletivo anulado em todas as turmas"
-          : "Pontuação anulada com sucesso",
-      });
-
-      fetchPoints(tabs.find((tab) => tab.label === activeTab).endpoint);
-      setDeleteModalOpen(false);
-      setDeletingPoint(null);
-    } catch (error) {
-      setMessages({
-        error: "Erro ao anular pontuacao: " + error?.response?.data?.errors[0],
-      });
-    }
-  };
-
-  const onPageChange = (page) => {
-    setCurrentPage(page);
-  };
-
-  const filteredPoints = groupedPoints.filter((point) =>
-    getPointSchoolClassNames(point).some((name) =>
-      name.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  );
+  const totalPages = Math.max(1, Math.ceil(filteredPoints.length / itemsPerPage));
+  const visiblePage = Math.min(currentPage, totalPages);
 
   return (
     <div className="container mx-auto p-4">
@@ -246,14 +151,14 @@ const PointsValidationPage = () => {
         <MessageBox
           message={messages.error}
           color="detail-minor"
-          onClose={() => setMessages({ ...messages, error: null })}
+          onClose={() => dismissMessage("error")}
         />
       )}
       {messages.success && (
         <MessageBox
           message={messages.success}
           color="lime-400"
-          onClose={() => setMessages({ ...messages, success: null })}
+          onClose={() => dismissMessage("success")}
         />
       )}
 
@@ -283,13 +188,16 @@ const PointsValidationPage = () => {
         <>
           <button
             key="aplicarTudo"
-            className={`px-4 py-2 m-1 mb-6 text-md font-medium rounded bg-green-500`}
+            className="px-4 py-2 m-1 mb-6 text-md font-medium rounded bg-green-500 disabled:opacity-50"
             onClick={handleApplyAll}
+            disabled={isMutating || isPointsLoading || !groupedPoints.length}
           >
             Aplicar todos os pontos pendentes
           </button>
         </>
       )}
+
+      {isPointsLoading && <p role="status" className="mb-4 text-sm text-gray-600">Carregando pontuações…</p>}
 
       {/* Tabela com Paginação e Ações Dinâmicas */}
       <Table
@@ -306,7 +214,7 @@ const PointsValidationPage = () => {
           "Registrado Por",
         ]}
         data={filteredPoints
-          .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+          .slice((visiblePage - 1) * itemsPerPage, visiblePage * itemsPerPage)
           .map((pontuacao) => ({
             nome_da_turma: <PointSchoolClassCell point={pontuacao} />,
             bimestre:
@@ -331,12 +239,8 @@ const PointsValidationPage = () => {
             schoolClasses: pontuacao.schoolClasses,
           }))}
         actions={getActions(activeTab)}
-        page={currentPage}
-        totalPages={
-          Math.ceil(filteredPoints.length / itemsPerPage) > 1
-            ? Math.ceil(filteredPoints.length / itemsPerPage)
-            : 1
-        }
+        page={visiblePage}
+        totalPages={totalPages}
         onPageChange={onPageChange}
         searchValue={searchTerm}
         onSearch={(value) => {
@@ -350,6 +254,7 @@ const PointsValidationPage = () => {
         isOpen={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
         onSave={deletePoints}
+        isSaving={isMutating}
       >
         <p>
           {deletingPoint?.collective
