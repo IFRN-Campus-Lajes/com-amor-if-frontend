@@ -81,7 +81,6 @@ paginação, menu mobile e navegação foram validados em larguras de 320, 375, 
 768 e 1024 px, sem transbordamento horizontal da página.
 
 O backend correspondente deve disponibilizar `/api/admin/regras-automaticas`.
-A configuração Docker de homologação local está em `ops/homologacao` no backend.
 
 ## Projetos relacionados
 
